@@ -2,6 +2,7 @@ package com.nadia.config.notification.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.util.Date;
 
@@ -9,6 +10,7 @@ import java.util.Date;
  * @author JunjieShen
  */
 @Data
+@Accessors(chain=true)
 public class ProcessingTaskResponse {
 
     private String type;

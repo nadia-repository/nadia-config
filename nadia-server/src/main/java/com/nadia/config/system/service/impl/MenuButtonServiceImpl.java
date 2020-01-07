@@ -42,19 +42,19 @@ public class MenuButtonServiceImpl implements MenuButtonService {
         List<Role> roleInfos = roleRepo.selectByNames(menuButtonRequest.getRoles());
 
         List<RoleMenu> roleMenus = roleMenuRepo.selectWithNameByRoleIds(roleInfos.stream().map(role -> role.getId()).collect(Collectors.toList()));
+        if(CollectionUtils.isNotEmpty(roleMenus)){
+            List<RoleMenuButton> roleMenuButtons = roleMenuButtonRepo.selectByRoleMenuIds(roleMenus.stream().map(id -> id.getId()).collect(Collectors.toList()));
 
-        List<RoleMenuButton> roleMenuButtons = roleMenuButtonRepo.selectByRoleMenuIds(roleMenus.stream().map(id -> id.getId()).collect(Collectors.toList()));
+            List<RoleMenu> children = roleMenus.stream().filter(menu -> menu.getParentId() > 0).collect(Collectors.toList());
+            Map<String, List<String>> bottonMap = new HashMap<>();
+            children.forEach(child -> {
+                List<String> buttons = roleMenuButtons.stream().filter(roleMenubutton -> child.getMenuId().equals(roleMenubutton.getMenuId())).map(button -> button.getName()).collect(Collectors.toList());
+                bottonMap.put(child.getName(), buttons);
+            });
 
-        List<RoleMenu> children = roleMenus.stream().filter(menu -> menu.getParentId() > 0).collect(Collectors.toList());
-        Map<String, List<String>> bottonMap = new HashMap<>();
-        children.forEach(child -> {
-            List<String> buttons = roleMenuButtons.stream().filter(roleMenubutton -> child.getMenuId().equals(roleMenubutton.getMenuId())).map(button -> button.getName()).collect(Collectors.toList());
-            bottonMap.put(child.getName(), buttons);
-        });
-
-        result.setMenus(roleMenus.stream().map(roleMenu -> roleMenu.getName()).collect(Collectors.toList()));
-        result.setButtons(bottonMap);
-
+            result.setMenus(roleMenus.stream().map(roleMenu -> roleMenu.getName()).collect(Collectors.toList()));
+            result.setButtons(bottonMap);
+        }
         return result;
     }
 }

@@ -610,24 +610,23 @@ public class TaskServiceImpl implements TaskService {
                     getTaskList.stream().filter(addedTask -> addedTask.getAction().equals(task.getAction()))
                             .forEach(addedTask -> {
                                 Role role = roleRepo.selectByRoleId(task.getRoleId());
-                                if (addedTask.getNextApproverRoles().indexOf(role.getName()) != -1) {
+                                if (!addedTask.getNextApproverRoles().equals(role.getName())) {
                                     addedTask.setNextApproverRoles(addedTask.getNextApproverRoles().concat("|").concat(role.getName()));
                                 }
-                                return;
                             });
+                    return;
                 } else {
                     actionList.add(task.getAction());
-                    item.setAction(task.getAction());
+                    Role role = roleRepo.selectByRoleId(task.getRoleId());
+                    item.setNextApproverRoles(role.getName()).setAction(task.getAction()).setCreatedAt(task.getCreatedAt()).setUpdatedAt(task.getUpdatedAt());
+                    JSONObject jsonObject = JSON.parseObject(item.getAction());
+                    String type = (String) jsonObject.get("type");
+                    item.setType(type);
+                    getTaskList.add(item);
                 }
-                item.setCreatedAt(task.getCreatedAt());
-                item.setUpdatedAt(task.getUpdatedAt());
-                JSONObject jsonObject = JSON.parseObject(item.getAction());
-                String type = (String) jsonObject.get("type");
-                Role role = roleRepo.selectByRoleId(task.getRoleId());
-                item.setNextApproverRoles(role.getName());
-                item.setType(type);
-                getTaskList.add(item);
             });
+
+
         }
 
         return new PageBean(request, this.paging(getTaskList, request.getPage(), request.getLimit()), CollectionUtils.isNotEmpty(getTaskList) ? getTaskList.size() : 0L);
