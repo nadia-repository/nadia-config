@@ -54,3 +54,31 @@
 5. 配置管理-配置项管理
 ###### 配置项管理提供具体配置的增删改查、发布等功能
 ![avatar](docs/pic/configs.png)
+###### 名词解释
+* Key 配置项的key，与客户端中@Value({key})相对应
+* Value 值
+* Status 
+    * new 新建配置
+    * edited 配置已变更，带审批
+    * approved 配置审批通过，可发布
+    * published 配置已发布
+    * removing 配置删除，待审批
+    * deleted 配置已删除，不显示
+    * invalid 配置无效，不显示
+    
+###### 功能说明
+* Add 新增配置，可选择配置的可见权限。若不选择，则该配置为当前登录用户的角色可见。需要审批。
+* Delete 删除配置，需要审批。
+* Export 导出配置。
+* Import 导入配置，需要审批。
+* Edit 编辑配置，需要审批。
+* Instance 查看当前配置的使用情况。
+![avatar](docs/pic/instanceConfig.png)
+* History 配置修改历史
+![avatar](docs/pic/history.png)
+
+6. 配置管理-配置项分配
+###### 配置项分配提供全局的角色配置可见权限设置。
+![avatar](docs/pic/allocate.png)
+###### 功能说明
+
