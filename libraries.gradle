@@ -1,0 +1,47 @@
+/*
+ * Use a libraries map to define the dependency artifacts
+ * It similar to the maven <dependencyManagement>
+ */
+ext {
+
+	log4j_version							= '1.2.17'
+	logback_version							= '1.2.3'
+	lombok_version							= '1.16.20'
+	commons_lang3_version					= '3.8.1'
+	spring_boot_version           			= '1.5.11.RELEASE'
+	jedis_version           				= '2.9.0'
+	spring_cloud_version					= '1.4.4.RELEASE'
+	fastjson_version						= '1.2.46'
+	mysql_version							= '6.0.6'
+	pagehelper_version						= '1.2.5'
+    spring_druid_version					= '1.1.17'
+    mybatis_version							= '1.3.1'
+	guava_version							= '19.0'
+    redisson_version   						= '2.15.2'
+	jbcrypt_version							= '0.4'
+	commons_collections_version				= '3.2.2'
+
+    libraries = [
+			log4j								: "log4j:log4j:${log4j_version}",
+			logback								: "ch.qos.logback:logback-classic:${logback_version}",
+			lombok								: "org.projectlombok:lombok:${lombok_version}",
+			commons_lang3						: "org.apache.commons:commons-lang3:${commons_lang3_version}",
+			spring_boot 						: "org.springframework.boot:spring-boot:${spring_boot_version}",
+			spring_boot_starter 				: "org.springframework.boot:spring-boot-starter:${spring_boot_version}",
+			jedis 								: "redis.clients:jedis:${jedis_version}",
+			spring_boot_start					: "org.springframework.boot:spring-boot-starter:${spring_boot_version}",
+			spring_boot_data_redis				: "org.springframework.boot:spring-boot-starter-data-redis:${spring_boot_version}",
+			spring_boot_start_aop				: "org.springframework.boot:spring-boot-starter-aop:${spring_boot_version}",
+			spring_boot_web 					: "org.springframework.boot:spring-boot-starter-web:${spring_boot_version}",
+			alibaba_fastjson					: "com.alibaba:fastjson:${fastjson_version}",
+			mysql								: "mysql:mysql-connector-java:${mysql_version}",
+			pagehelper							: "com.github.pagehelper:pagehelper-spring-boot-starter:${pagehelper_version}",
+            spring_boot_druid					: "com.alibaba:druid-spring-boot-starter:${spring_druid_version}",
+            mybatis								: "org.mybatis.spring.boot:mybatis-spring-boot-starter:${mybatis_version}",
+			guava								: "com.google.guava:guava:${guava_version}",
+			spring_boot_security				: "org.springframework.boot:spring-boot-starter-security:${spring_boot_version}",
+            redisson                  			: "org.redisson:redisson-spring-boot-starter:${redisson_version}",
+			jbcrypt								: "org.mindrot:jbcrypt:${jbcrypt_version}",
+			commons_collections					: "commons-collections:commons-collections:${commons_collections_version}",
+    ]
+}

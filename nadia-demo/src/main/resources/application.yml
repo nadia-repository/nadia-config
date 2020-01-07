@@ -1,0 +1,19 @@
+server:
+  port: 8082
+  context-path: /config
+
+nadia:
+  Integer: 1
+  String: test
+  boolean: true
+
+prefix:
+  name: prefixname
+  value: 121
+
+
+spring:
+  profiles:
+    active: dev
+  application:
+    name: config-demo

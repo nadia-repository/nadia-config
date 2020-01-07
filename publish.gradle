@@ -1,0 +1,35 @@
+apply plugin: 'maven-publish'
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            version project.version
+            from components.java
+
+            artifact sourceJar {
+                classifier "sources"
+            }
+
+        }
+    }
+    repositories {
+        maven {
+            if(version.contains('SNAPSHOT')){
+                url repoUrlSnapshots
+            }else{
+                url repoUrlRelease
+            }
+            //认证用户和密码
+            credentials {
+                username repoUsername
+                password repoPassword
+            }
+        }
+    }
+}

@@ -1,0 +1,27 @@
+apply plugin: 'java'
+apply from: '../libraries.gradle'
+apply from: '../publish.gradle'
+
+sourceCompatibility = jdkVersion
+group rootProject.group
+version rootProject.version
+
+repositories {
+    mavenCentral()
+    maven {
+        url repoUrl
+        credentials {
+            username repoUsername
+            password repoPassword
+        }
+    }
+}
+
+configurations.all {
+    // check for updates every build
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+dependencies {
+    compile(project(":nadia-core"))
+}

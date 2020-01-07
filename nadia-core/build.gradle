@@ -1,0 +1,35 @@
+apply plugin: 'java'
+apply from: '../libraries.gradle'
+apply from: '../publish.gradle'
+
+sourceCompatibility = jdkVersion
+group rootProject.group
+version rootProject.version
+
+repositories {
+    mavenCentral()
+    maven {
+        url repoUrl
+        credentials {
+            username repoUsername
+            password repoPassword
+        }
+    }
+}
+
+configurations.all {
+    // check for updates every build
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+dependencies {
+    compile(libraries.spring_boot)
+    compile(libraries.log4j)
+    compile(libraries.logback)
+    compile(libraries.lombok)
+    compile(libraries.spring_boot_data_redis)
+    compile(libraries.alibaba_fastjson)
+    compile(libraries.guava)
+//    compile(libraries.redisson)
+    testCompile("org.springframework.boot:spring-boot-starter-test:1.5.11.RELEASE")
+}

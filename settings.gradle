@@ -1,0 +1,5 @@
+rootProject.name = 'nadia'
+include 'nadia-client'
+include 'nadia-server'
+include 'nadia-demo'
+include 'nadia-core'

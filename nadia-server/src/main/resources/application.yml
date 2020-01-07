@@ -1,0 +1,39 @@
+server:
+  port: 8081
+  context-path: /config
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    metadata-map:
+      version: 1.0.0.0
+      weight: 100
+
+spring:
+  application:
+    name: config-srv
+  profiles:
+    active: dev
+  messages:
+    basename: i18n/messages,i18n/errors
+  jackson:
+    default-property-inclusion: non_null
+
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    initialSize: 1
+    minIdle: 1
+    maxActive: 5
+    poolPreparedStatements: false
+    maxPoolPreparedStatementPerConnectionSize: 20
+    filters: stat,wall
+    connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+
+mybatis:
+  mapper-locations: classpath*:mybatis/mapper/**/*.xml
+  config-locations: classpath*:mybatis/config.xml
+
+logging:
+    path: ./logs/config
+

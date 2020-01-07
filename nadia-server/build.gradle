@@ -1,0 +1,58 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'org.springframework.boot'
+apply from: '../libraries.gradle'
+apply from: '../publish.gradle'
+
+sourceCompatibility = jdkVersion
+group rootProject.group
+version rootProject.version
+
+repositories {
+    mavenCentral()
+    maven {
+        url repoUrl
+        credentials {
+            username repoUsername
+            password repoPassword
+        }
+    }
+}
+
+buildscript {
+    repositories {
+        maven {
+            url 'http://maven.aliyun.com/nexus/content/groups/public/'
+        }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.3.RELEASE")
+    }
+}
+
+configurations.all {
+    // check for updates every build
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+dependencies {
+    compile(libraries.spring_boot_web) {
+        exclude group: "org.springframework.boot", module: "spring-boot-starter"
+        exclude group: "org.springframework.boot", module: "spring-boot-autoconfigure"
+    }
+//    compile(libraries.spring_boot_security)
+    compile(libraries.jbcrypt)
+    compile(libraries.mysql)
+    compile(libraries.spring_boot_start_aop)
+    compile(libraries.pagehelper){
+        exclude group: "org.springframework.boot", module: "spring-boot-starter"
+        exclude group: "org.springframework.boot", module: "spring-boot-autoconfigure"
+    }
+    compile(libraries.spring_boot_druid)
+    compile(libraries.mybatis)
+    compile(libraries.commons_lang3)
+    compile(libraries.commons_collections)
+    compile(project(":nadia-core"))
+    testCompile("org.springframework.boot:spring-boot-starter-test:1.5.11.RELEASE")
+}

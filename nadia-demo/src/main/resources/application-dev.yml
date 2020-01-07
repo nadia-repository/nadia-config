@@ -1,0 +1,7 @@
+configcenter:
+  group: Default
+  application: Trade
+  redis:
+    host: 192.168.11.21
+    port: 6379
+    password:
