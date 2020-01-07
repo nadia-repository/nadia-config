@@ -130,6 +130,8 @@ public class ConfigRepo {
         ConfigCriteria example = new ConfigCriteria();
         ConfigCriteria.Criteria criteria = example.createCriteria();
         criteria.andGroupIdEqualTo(groupId);
+        criteria.andStatusIn(Arrays.asList(new String[]{ConfigStatusEnum.PUBLISHED.getStatus(),
+                ConfigStatusEnum.APPROVED.getStatus(),ConfigStatusEnum.EDITED.getStatus(),ConfigStatusEnum.NEW.getStatus()}));
         return configMapper.selectByExampleWithBLOBs(example);
     }
 

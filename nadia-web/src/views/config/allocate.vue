@@ -125,6 +125,13 @@ export default {
       return this.routes
     },
     getList() {
+      if (this.postForm.role === '') {
+        this.$message({
+          type: 'error',
+          message: 'Please choose role'
+        })
+        return
+      }
       this.listLoading = true
       getRoleConfigs(this.postForm.role).then(response => {
         this.list = response.data

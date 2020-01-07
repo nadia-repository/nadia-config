@@ -18,19 +18,43 @@
 #### 部署图
 ![avatar](docs/pic/服务部署图.png)
 
+#### 项目构成
+> nadia-config 项目根目录
+
+>> nadia-client 客户端
+
+>> nadia-core 通用代码
+
+>> nadia-server 服务端
+
+>> nadia-web 前端页面
+
+>> nadia-demo 客户端demo
+
+>> docs 文档
+
+>>> desgin 设计文档
+
+>>> sql 服务端脚本
+
+>>>> DDL.sql 建表
+
+>>>> DML.sql 初始数据
+
+
 #### 管理平台介绍
 
-1. 登录页面
+####1. 登录页面
 ![avatar](docs/pic/登录.png)
 
-2. 注册页面
+####2. 注册页面
 ![avatar](docs/pic/注册.png)
 
-3. 主界面
+####3. 主界面
 ###### 根据登录用户的角色不同，菜单按钮会有相应变化
 ![avatar](docs/pic/主页面.png)
 
-4. 配置管理-元数据管理
+####4. 配置管理--元数据管理
 ###### 元数据管理是所有配置的基础，客户端使用配置项时需要指定相关的元数据
 ![avatar](docs/pic/metadata.png)
 
@@ -51,7 +75,7 @@
 * Inscance 查看弄实例当前的配置与服务端配置的差异。
 ![avatar](docs/pic/instance.png)
 
-5. 配置管理-配置项管理
+####5. 配置管理--配置项管理
 ###### 配置项管理提供具体配置的增删改查、发布等功能
 ![avatar](docs/pic/configs.png)
 ###### 名词解释
@@ -77,8 +101,34 @@
 * History 配置修改历史
 ![avatar](docs/pic/history.png)
 
-6. 配置管理-配置项分配
+####6. 配置管理--配置项分配
 ###### 配置项分配提供全局的角色配置可见权限设置。
 ![avatar](docs/pic/allocate.png)
 ###### 功能说明
+* Allocate 分配角色可见配置
+![avatar](docs/pic/allocateConfigs.png)
 
+####7. 消息中心--操作日志
+###### 提供管理平台所有增删改的操作日志查询和回溯。
+![avatar](docs/pic/operationLog.png)
+
+####8. 消息中心--任务中心
+###### 提供审批查看、审批操作(通过、拒绝)等功能。
+* Pending Task 待审批列表，提供审批通过、决绝，审配内容查看等功能。
+![avatar](docs/pic/pendingTask.png)
+* Processing Task 审批进度列表，提供审批进度的查询。
+![avatar](docs/pic/processingTask.png)
+* Complete Task 完成任务列表，提供历史审批通过、拒绝的任务的查询。
+![avatar](docs/pic/completeTask.png)
+
+####9. 消息中心--操作日志
+###### 提供客户端上报日志的查询。
+![avatar](docs/pic/clientLog.png)
+
+####10. 用户中心--角色管理
+###### 提供角色的增删改查，角色的菜单权限、按钮权限的设置。
+![avatar](docs/pic/role.png)
+
+####10. 用户中心--用户管理
+###### 提供用户的增删改查，用户的角色分配设置。
+![avatar](docs/pic/user.png)
