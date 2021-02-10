@@ -6,8 +6,11 @@ import com.nadia.config.enums.LogLevelEnum;
 import com.nadia.config.listener.MessageConvert;
 import com.nadia.config.listener.enumerate.EventType;
 import com.nadia.config.listener.messageBody.ClientMessageBody;
+import com.nadia.config.publish.RedisPubSub;
+import com.nadia.config.utils.TopicUtil;
 import com.nadia.config.utils.TraceGenerate;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 
 import java.util.Queue;

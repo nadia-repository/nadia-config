@@ -2,6 +2,10 @@ package com.nadia.config.constant;
 
 public class PropertyConstant {
 
+    public final static String PROPERTY_SOURCE = "nadia.config";
+
+    public final static String PROPERTY_SOURCE_ENABLE = "nadia.config.enable";
+
     public final static String PROPERTRY_APPLICATION_NAME = "spring.application.name";
 
     public final static String PROPERTRY_PROFILES_NAME = "spring.profiles.active";

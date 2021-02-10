@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export function applicationList() {
   return request({
-    url: '/meta/application/list',
+    url: '/applications/grouped',
     method: 'get'
   })
 }

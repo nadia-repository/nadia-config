@@ -2,7 +2,6 @@ package com.nadia.config.user.dao;
 
 import com.nadia.config.user.domain.LoginHistories;
 import com.nadia.config.user.domain.LoginHistoriesCriteria;
-
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

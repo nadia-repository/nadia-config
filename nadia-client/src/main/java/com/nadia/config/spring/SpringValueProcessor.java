@@ -3,11 +3,11 @@ package com.nadia.config.spring;
 import com.nadia.config.annotation.NadiaConfig;
 import com.nadia.config.bean.Config;
 import com.nadia.config.bean.ConfigContextHolder;
+import com.nadia.config.callback.Callback;
+import com.nadia.config.enumerate.ConfigTypeEnum;
 import com.nadia.config.spi.AbstractMetadata;
 import com.nadia.config.utils.FieldUtil;
 import com.nadia.config.utils.PlaceholderHelper;
-import com.nadia.config.callback.Callback;
-import com.nadia.config.enumerate.ConfigTypeEnum;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -28,6 +28,19 @@ import java.util.stream.Collectors;
 public class SpringValueProcessor extends AbstractMetadata implements BeanPostProcessor, PriorityOrdered {
 
     private String[] basePackages;
+
+
+    private String defaultApplication;
+
+    private String defaultGroup;
+
+    public void setDefaultApplication(String defaultApplication) {
+        this.defaultApplication = defaultApplication;
+    }
+
+    public void setDefaultGroup(String defaultGroup) {
+        this.defaultGroup = defaultGroup;
+    }
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
@@ -94,7 +107,9 @@ public class SpringValueProcessor extends AbstractMetadata implements BeanPostPr
 
         for (String key : keys) {
             Config config = generateConfig(bean, beanName, key, field);
-            ConfigContextHolder.setConfigHolder(key, config);
+            if(config != null){
+                ConfigContextHolder.setConfigHolder(config.getApplication(),config.getGroup(),key, config);
+            }
         }
     }
 
@@ -102,12 +117,24 @@ public class SpringValueProcessor extends AbstractMetadata implements BeanPostPr
         NadiaConfig nadiaConfig = field.getAnnotation(NadiaConfig.class);
         Class<? extends Callback> callback = null;
         Set<NadiaConfig.CallbackScenes> callbackScenesSet = null;
+        String application = defaultApplication;
+        String group = defaultGroup;
         if (nadiaConfig != null) {
             if(nadiaConfig.exclude()){
                 return null;
             }
             callback = nadiaConfig.clazz();
+            if (callback.equals(Callback.class)) {
+                callback = null;
+            }
             callbackScenesSet = getCallbackScenes(nadiaConfig);
+
+            if(!"".equals(nadiaConfig.application()) && nadiaConfig.application() != null){
+                application = nadiaConfig.application();
+            }
+            if(!"".equals(nadiaConfig.group()) && nadiaConfig.group() != null){
+                group = nadiaConfig.group();
+            }
         }
         return new Config(ConfigTypeEnum.FIELD,
                 beanName,
@@ -118,7 +145,9 @@ public class SpringValueProcessor extends AbstractMetadata implements BeanPostPr
                 callback,
                 callbackScenesSet,
                 field.getType(),
-                bean);
+                bean,
+                application,
+                group);
     }
 
     private Set<NadiaConfig.CallbackScenes> getCallbackScenes(NadiaConfig nadiaConfig) {
@@ -130,7 +159,9 @@ public class SpringValueProcessor extends AbstractMetadata implements BeanPostPr
         String key = prefix + "." + field.getName();
 
         Config config = generateConfig(bean, beanName, key, field);
-        ConfigContextHolder.setConfigHolder(key, config);
+        if(config != null){
+            ConfigContextHolder.setConfigHolder(config.getApplication(),config.getGroup(),key, config);
+        }
     }
 
 

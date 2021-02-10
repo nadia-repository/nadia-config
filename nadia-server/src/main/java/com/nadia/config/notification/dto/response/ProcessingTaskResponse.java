@@ -9,8 +9,8 @@ import java.util.Date;
 /**
  * @author JunjieShen
  */
-@Data
 @Accessors(chain=true)
+@Data
 public class ProcessingTaskResponse {
 
     private String type;

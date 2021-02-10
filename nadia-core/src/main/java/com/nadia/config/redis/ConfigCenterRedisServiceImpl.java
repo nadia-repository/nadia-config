@@ -20,13 +20,13 @@ import java.util.*;
 @Slf4j
 @Primary
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class RedisServiceImpl implements RedisService {
+public class ConfigCenterRedisServiceImpl implements ConfigCenterRedisService {
     @Resource(name = "configCenterRedis")
     private RedisTemplate redisTemplate;
 
     private final RedisSerializer<String> stringSerializer = new StringRedisSerializer();
 
-    public RedisServiceImpl() {
+    public ConfigCenterRedisServiceImpl() {
     }
 
     private final byte[] rawKey(String key) {
@@ -885,6 +885,9 @@ public class RedisServiceImpl implements RedisService {
             @Override
             public List<String> doInRedis(RedisConnection connection) {
                 List<byte[]> bytes = connection.bLPop(timeout, bks);
+                if(CollectionUtils.isEmpty(bytes)){
+                    return null;
+                }
                 List<String> result = new LinkedList<>();
                 for(int i = 0;i<bytes.size();i++){
                     result.add(stringOf(bytes.get(i)));

@@ -5,12 +5,14 @@
         v-model="params.applicationId"
         placeholder="Application"
         clearable
-        style="width: 120px"
+        style="width: 200px"
         class="filter-item"
         @change="handleApplicationChange"
         @clear="handleApplicationChange"
       >
-        <el-option v-for="item in applications" :key="item.id" :label="item.name" :value="item.id" />
+        <el-option-group v-for="appgroup in appgroups" :key="appgroup.label" :label="appgroup.label">
+            <el-option v-for="item in appgroup.items" :key="item.id" :label="item.name" :value="item.id" />
+        </el-option-group>
       </el-select>
       <el-select v-model="params.groupId" placeholder="Group" clearable style="width: 120px" class="filter-item">
         <el-option v-for="item in groups" :key="item.id" :label="item.name" :value="item.id" />
@@ -193,13 +195,13 @@
             show-word-limit
           />
         </el-form-item>
-        <el-form-item label="Value" required prop="value">
+        <el-form-item label="Value" prop="value">
           <el-input
             v-model="additionForm.value"
             :autosize="{ minRows: 2, maxRows: 4}"
             type="textarea"
             placeholder="Please input"
-            maxlength="2024"
+            maxlength="10240"
             clearable
             show-word-limit
           />
@@ -260,13 +262,13 @@
             show-word-limit
           />
         </el-form-item>
-        <el-form-item label="Value" required prop="value">
+        <el-form-item label="Value" prop="value">
           <el-input
             v-model="modificationForm.value"
             :autosize="{ minRows: 2, maxRows: 4}"
             type="textarea"
             placeholder="Please input"
-            maxlength="2024"
+            maxlength="10240"
             clearable
             show-word-limit
           />
@@ -355,7 +357,7 @@ export default {
     return {
       instances: [],
       histories: [],
-      applications: [],
+      appgroups: [],
       groups: [],
       list: [],
       total: 0,
@@ -403,13 +405,6 @@ export default {
           {
             required: true,
             message: 'key is required',
-            trigger: 'blur'
-          }
-        ],
-        value: [
-          {
-            required: true,
-            message: 'value is required',
             trigger: 'blur'
           }
         ],
@@ -479,7 +474,7 @@ export default {
       getApplications()
         .then(response => {
           if (isSuccessful(response)) {
-            this.applications = response.data
+            this.appgroups = response.data
           }
         })
         .catch(() => {

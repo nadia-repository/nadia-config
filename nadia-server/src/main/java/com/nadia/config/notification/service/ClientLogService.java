@@ -1,8 +1,8 @@
 package com.nadia.config.notification.service;
 
+import com.nadia.config.meta.dto.response.PageBean;
 import com.nadia.config.notification.domain.ClientLog;
 import com.nadia.config.notification.dto.request.ClientLogRequest;
-import com.nadia.config.meta.dto.response.PageBean;
 
 /**
  * @author xiang.shi

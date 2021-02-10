@@ -5,6 +5,8 @@ import java.util.Date;
 public class Task {
     private Long id;
 
+    private String taskNo;
+
     private String action;
 
     private String status;
@@ -81,5 +83,13 @@ public class Task {
 
     public void setUpdatedBy(String updatedBy) {
         this.updatedBy = updatedBy == null ? null : updatedBy.trim();
+    }
+
+    public String getTaskNo() {
+        return taskNo;
+    }
+
+    public void setTaskNo(String taskNo) {
+        this.taskNo = taskNo;
     }
 }

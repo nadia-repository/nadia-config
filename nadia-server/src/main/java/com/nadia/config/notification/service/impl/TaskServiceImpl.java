@@ -7,17 +7,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.nadia.config.common.context.UserContextHolder;
 import com.nadia.config.common.rest.RestBody;
-import com.nadia.config.notification.domain.*;
-import com.nadia.config.notification.dto.request.ApproveTaskRequest;
-import com.nadia.config.notification.dto.request.TaskParameter;
-import com.nadia.config.notification.enums.ActionType;
-import com.nadia.config.notification.enums.Event;
-import com.nadia.config.notification.enums.TaskStatus;
-import com.nadia.config.notification.repo.TaskRepo;
-import com.nadia.config.user.domain.Role;
-import com.nadia.config.user.domain.RoleApprover;
-import com.nadia.config.user.repo.RoleApproverRepo;
-import com.nadia.config.user.repo.RoleRepo;
 import com.nadia.config.meta.domain.Application;
 import com.nadia.config.meta.domain.Config;
 import com.nadia.config.meta.domain.Group;
@@ -27,12 +16,23 @@ import com.nadia.config.meta.repo.ApplicationRepo;
 import com.nadia.config.meta.repo.ConfigRepo;
 import com.nadia.config.meta.repo.GroupRepo;
 import com.nadia.config.meta.service.ConfigService;
+import com.nadia.config.notification.domain.*;
+import com.nadia.config.notification.dto.request.ApproveTaskRequest;
 import com.nadia.config.notification.dto.request.PendingTaskRequest;
 import com.nadia.config.notification.dto.request.ProcessingTaskRequest;
+import com.nadia.config.notification.dto.request.TaskParameter;
 import com.nadia.config.notification.dto.response.HistoryTaskResponse;
 import com.nadia.config.notification.dto.response.PendingTaskResponse;
 import com.nadia.config.notification.dto.response.ProcessingTaskResponse;
+import com.nadia.config.notification.enums.ActionType;
+import com.nadia.config.notification.enums.Event;
+import com.nadia.config.notification.enums.TaskStatus;
+import com.nadia.config.notification.repo.TaskRepo;
 import com.nadia.config.notification.service.TaskService;
+import com.nadia.config.user.domain.Role;
+import com.nadia.config.user.domain.RoleApprover;
+import com.nadia.config.user.repo.RoleApproverRepo;
+import com.nadia.config.user.repo.RoleRepo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.BeanUtils;
@@ -92,16 +92,43 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public void startTask(TaskParameter config) {
         String userName = UserContextHolder.getUserDetail().getName();
-        List<Long> roleIds = UserContextHolder.getUserDetail().getRoleIds();
 
         TaskParameter.Action action = config.getAction();
         //根据action接口实现类生成入库需要的JSON字符串格式的actionText
         String actionText = this.formatJSONString(action);
         //遍历审批发起人的roleId
-        roleIds.forEach(roleId -> {
-            this.createNextTasks(roleId, actionText, userName, new Date());
-        });
+//        List<Long> roleIds = UserContextHolder.getUserDetail().getRoleIds();
+//        roleIds.forEach(roleId -> {
+//            this.createNextTasks(roleId, actionText, userName, new Date());
+//        });
+        this.filterApproverAndCreateTasks(actionText, userName);
     }
+
+    private void filterApproverAndCreateTasks(String actionText, String userName){
+        List<Long> roleIds = UserContextHolder.getUserDetail().getRoleIds();
+
+        List<RoleApprover> roleApprovers = roleApproverRepo.selectByRoleIds(roleIds);
+        List<Long> roles = roleApprovers.stream().map(roleApprover -> roleApprover.getRoleId()).collect(Collectors.toList());
+
+        boolean hasApprover = roles.containsAll(roleIds);
+        if(hasApprover){
+            Date date = new Date();
+            String taskNo ="TN"+((new Date().getTime())%999999999);;
+            roleApprovers.forEach(roleApprover -> {
+                Task record = new Task();
+                record.setAction(actionText);
+                record.setStatus(TaskStatus.PENDING.getStatus());
+                record.setRoleId(roleApprover.getApproverRoleId());
+                record.setCreatedAt(date);
+                record.setCreatedBy(userName);
+                record.setTaskNo(taskNo);
+                taskRepo.insertSelective(record);
+            });
+        }else {
+            this.applyConfig(actionText, TaskStatus.APPROVE.getStatus());
+        }
+    }
+
 
     public String formatJSONString(TaskParameter.Action action){
         //根据对应的action实现类，获取到type,configId,value(before,after)
@@ -352,8 +379,14 @@ public class TaskServiceImpl implements TaskService {
                 nextApproverRoles.append(approver.getName()).append("|");
             }
         });
+            Set<String> taskNos = new HashSet<>();
         if (CollectionUtils.isNotEmpty(taskList)) {
             taskList.forEach(task -> {
+                if(taskNos.contains(task.getTaskNo())){
+                    return;
+                }else {
+                    taskNos.add(task.getTaskNo());
+                }
                 PendingTaskResponse item = new PendingTaskResponse();
                 BeanUtils.copyProperties(task, item);
                 JSONObject jsonObject = JSON.parseObject(item.getAction());
@@ -392,20 +425,21 @@ public class TaskServiceImpl implements TaskService {
         if (task.getStatus().equals(TaskStatus.PENDING.getStatus())) {
             //意见为通过
             if (request.isFlag()) {
+                task.setStatus(TaskStatus.COMPLETED.getStatus());
                 //判断是否是最后一个节点
-                if (this.isLastApprover(task.getRoleId())) {
-                    //审批流最后一个节点
-                    task.setStatus(TaskStatus.COMPLETED.getStatus());
-                    //使得配置生效，回调config接口
-                    this.applyConfig(task.getAction(), TaskStatus.APPROVE.getStatus());
-                } else {
-                    task.setStatus(TaskStatus.APPROVE.getStatus());
-                    //生成下一个节点的任务
-                    List<Long> roleIds = UserContextHolder.getUserDetail().getRoleIds();
-                    roleIds.forEach(roleId -> {
-                        this.createNextTasks(roleId, task.getAction(), task.getCreatedBy(), task.getCreatedAt());
-                    });
-                }
+//                if (this.isLastApprover(task.getRoleId())) {
+//                    //审批流最后一个节点
+//                    //使得配置生效，回调config接口
+//                    this.applyConfig(task.getAction(), TaskStatus.APPROVE.getStatus());
+//                } else {
+//                    task.setStatus(TaskStatus.APPROVE.getStatus());
+//                    //生成下一个节点的任务
+////                    List<Long> roleIds = UserContextHolder.getUserDetail().getRoleIds();
+////                    roleIds.forEach(roleId -> {
+////                        this.createNextTasks(roleId, task.getAction(), task.getCreatedBy(), task.getCreatedAt());
+////                    });
+//                }
+                this.filterApproverAndCreateTasks(task.getAction(), task.getCreatedBy());
             } else {//意见为不通过
                 task.setStatus(TaskStatus.REJECT.getStatus());
                 //使得配置生效，回调config接口
@@ -415,6 +449,12 @@ public class TaskServiceImpl implements TaskService {
             task.setUpdatedAt(new Date());
             //更新当前task状态入库
             taskRepo.updateByPrimaryKeySelective(task);
+//            Task invaildTask = new Task();
+//            invaildTask.setTaskNo(task.getTaskNo());
+//            invaildTask.setStatus(TaskStatus.INVALID.getStatus());
+//            invaildTask.setUpdatedAt(task.getUpdatedAt());
+//            invaildTask.setUpdatedBy(task.getUpdatedBy());
+//            taskRepo.updateByTaskNo(invaildTask);
         } else if (task.getStatus().equals(TaskStatus.APPROVE.getStatus())) {
             return RestBody.fail("task has been approved");
         } else if (task.getStatus().equals(TaskStatus.REJECT.getStatus())) {

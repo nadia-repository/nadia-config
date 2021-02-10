@@ -2,7 +2,9 @@
   <div class="app-container">
     <div class="filter-container">
       <el-select v-model="postForm.applications" :method="getApplications" placeholder="Application" multiple clearable @change="getlist">
-        <el-option v-for="item in applicationOptions" :key="item.name" :label="item.name" :value="item.name" />
+        <el-option-group v-for="appgroup in appgroups" :key="appgroup.label" :label="appgroup.label">
+            <el-option v-for="item in appgroup.items" :key="item.name" :label="item.name" :value="item.name" />
+        </el-option-group>
       </el-select>
       <el-button v-if="checkButtonPermission('Metadata','Add')" class="filter-item" style="margin-left: 10px;" type="primary" icon="el-icon-edit" @click="handleAddApplication">
         Add
@@ -228,7 +230,7 @@ export default {
       dialogAddApplicationVisible: false,
       dialogAddGroupVisible: false,
       dialogSwitchInstanceVisible: false,
-      applicationOptions: null,
+      appgroups: null,
       list: null,
       applicationRules: {
         application: [{ required: true, message: 'application is required', trigger: 'change' }],
@@ -276,7 +278,7 @@ export default {
     },
     getApplications() {
       applicationList().then(response => {
-        this.applicationOptions = response.data
+        this.appgroups = response.data
       })
     },
     getGroups(row) {

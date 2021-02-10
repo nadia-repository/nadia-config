@@ -28,7 +28,6 @@ public class ConfigRequest extends BaseRequest {
     private Long groupId;
     @NotNull(message = "id could not be null", groups = Updation.class)
     private Long id;
-    @NotBlank(message = "value could not be blank")
     private String value;
     @NotBlank(message = "description could not be blank")
     private String description;

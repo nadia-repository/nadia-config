@@ -1,8 +1,8 @@
 package com.nadia.config.spring;
 
 import com.nadia.config.publish.RedisPubSub;
-import com.nadia.config.redis.RedisService;
-import com.nadia.config.redis.RedisServiceImpl;
+import com.nadia.config.redis.ConfigCenterRedisService;
+import com.nadia.config.redis.ConfigCenterRedisServiceImpl;
 import com.nadia.config.spi.ConfigCenter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -15,9 +15,9 @@ import redis.clients.jedis.JedisPoolConfig;
 public class ConfigCenterRedisConfig implements ConfigCenter {
 
     private final static int database = 0;
-    private final static int maxActive = 10;
-    private final static int maxIdle = 8;
-    private final static int minIdle = 2;
+    private final static int maxActive = 100;
+    private final static int maxIdle = 20;
+    private final static int minIdle = 10;
     private final static long maxWait = 100;
 
     @Bean("configCenterRedis")
@@ -46,6 +46,7 @@ public class ConfigCenterRedisConfig implements ConfigCenter {
         redisTemplate.setHashKeySerializer(stringRedisSerializer);
         redisTemplate.setDefaultSerializer(stringRedisSerializer);
         redisTemplate.afterPropertiesSet();
+        redisTemplate.setEnableTransactionSupport(false);
         return redisTemplate;
     }
 
@@ -91,8 +92,8 @@ public class ConfigCenterRedisConfig implements ConfigCenter {
     }
 
     @Bean
-    public RedisService getRedisService(){
-        return new RedisServiceImpl();
+    public ConfigCenterRedisService getRedisService(){
+        return new ConfigCenterRedisServiceImpl();
     }
 
     @Bean

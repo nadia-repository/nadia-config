@@ -1,36 +1,43 @@
 package com.nadia.config.spi;
 
 import com.alibaba.fastjson.JSONObject;
+import com.nadia.config.annotation.EnableNadiaConfig;
 import com.nadia.config.bean.ClientInfo;
+import com.nadia.config.bean.ConfigContextHolder;
+import com.nadia.config.common.exception.ConfigClientException;
 import com.nadia.config.constant.GroupConstant;
+import com.nadia.config.constant.OrderConstant;
+import com.nadia.config.constant.PropertyConstant;
 import com.nadia.config.enums.LogLevelEnum;
 import com.nadia.config.listener.enumerate.EventType;
 import com.nadia.config.publish.RedisPubSub;
+import com.nadia.config.utils.ClientValueUtil;
 import com.nadia.config.utils.IpPortUtil;
-import com.nadia.config.annotation.EnableNadiaConfig;
-import com.nadia.config.constant.OrderConstant;
-import com.nadia.config.constant.PropertyConstant;
 import com.nadia.config.utils.SpiServiceUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.EnvironmentAware;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.env.Environment;
 import org.springframework.util.StringUtils;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @Slf4j
 public abstract class AbstractInitEnvironment extends AbstractMetadata implements InitEnvironment, Ordered {
 
-    @Autowired
     private Environment env;
 
-    @Getter
-    @Setter
-    private String application;
+    private String defaultApplication;
 
-    @Setter
+    private String defaultGroup;
+
     private ClientInfo clientInfo;
 
     @Getter
@@ -43,7 +50,7 @@ public abstract class AbstractInitEnvironment extends AbstractMetadata implement
 
     @Getter
     @Setter
-    private String group;
+    private String appName;
 
     @Getter
     @Setter
@@ -54,17 +61,42 @@ public abstract class AbstractInitEnvironment extends AbstractMetadata implement
         return clientInfo;
     }
 
+    @Override
+    public void setEnvironment(Environment environment) {
+        this.env = environment;
+
+    }
+
+    public void setDefaultApplication(String defaultApplication) {
+        this.defaultApplication = defaultApplication;
+    }
+
+    public void setDefaultGroup(String defaultGroup) {
+        this.defaultGroup = defaultGroup;
+    }
+
+    @Override
+    public String getDefaultApplication() {
+        return this.defaultApplication;
+    }
+
+    @Override
+    public String getDefaultGroup() {
+        return this.defaultGroup;
+    }
+
     @Autowired
     private RedisPubSub redisPubSub;
 
     @Override
     public void init() {
         log.info("========================= InitEnvironment start =========================");
-        setGroup();
         setBasePackage();
-        setApplication();
+        setDefaultApplication();
+        setDefaultGroup();
         setIp();
         setPort();
+        setAppName();
         setClientInfo();
         logConfig();
         log.info("========================= InitEnvironment end   =========================");
@@ -82,54 +114,38 @@ public abstract class AbstractInitEnvironment extends AbstractMetadata implement
         setIp(IpPortUtil.getLocalIP());
     }
 
-    private void setClientInfo() {
+    private void setAppName(){
+        String appName = env.getProperty(PropertyConstant.PROPERTRY_APPLICATION_NAME);
+        setAppName(appName);
+    }
+
+    public void setClientInfo() {
         ClientInfo clientInfo = new ClientInfo();
-        clientInfo.setApplication(this.application);
-        clientInfo.setGroup(this.group);
         clientInfo.setIp(this.ip);
         clientInfo.setPort(this.port);
-        clientInfo.setName(this.ip + ":" + this.port);
-        setClientInfo(clientInfo);
+        clientInfo.setName(this.appName + "[" + this.ip + "]");
+        clientInfo.setApplicationGroupMap(ConfigContextHolder.getApplicationGroups());
+        this.clientInfo =  clientInfo;
     }
 
     private void logConfig() {
-        log.info("========================= InitEnvironment application:{}", clientInfo.getApplication());
-        log.info("========================= InitEnvironment group:{}", clientInfo.getGroup());
         log.info("========================= InitEnvironment ip:{}", clientInfo.getIp());
         log.info("========================= InitEnvironment port:{}", clientInfo.getPort());
         redisPubSub.notifyServer(getClientInfo(), EventType.CLIENT_MESSAGE, LogLevelEnum.LOG,"client info:" + JSONObject.toJSONString(getClientInfo()));
     }
 
-    private void setApplication() {
-        AnnotationAttributes attributes = AnnotationAttributes
-                .fromMap(getImportingClassMetadata().getAnnotationAttributes(EnableNadiaConfig.class.getName()));
-        String application = attributes.getString("application");
-        String propertyApplication = env.getProperty(PropertyConstant.PROPERTRY_APPLICATION);
-        if (StringUtils.isEmpty(application) && StringUtils.isEmpty(propertyApplication)) {
-            setApplication(env.getProperty(PropertyConstant.PROPERTRY_APPLICATION_NAME));
-        } else if (!StringUtils.isEmpty(propertyApplication)) {
-            setApplication(propertyApplication);
-        } else if (!StringUtils.isEmpty(application)) {
-            setApplication(application);
-        } else {
+    private void setDefaultApplication() {
+        if("".equals(defaultApplication) || defaultApplication == null){
             redisPubSub.notifyServer(getClientInfo(), EventType.CLIENT_MESSAGE, LogLevelEnum.ERROR,"Please set application");
             throw new RuntimeException("Please set application!");//todo
         }
+        log.info("========================= InitEnvironment defaultApplication:{}", this.defaultApplication);
     }
 
-    private void setGroup() {
-        AnnotationAttributes attributes = AnnotationAttributes
-                .fromMap(getImportingClassMetadata().getAnnotationAttributes(EnableNadiaConfig.class.getName()));
-        String group = attributes.getString("group");
-        String propertyGroup = env.getProperty(PropertyConstant.PROPERTRY_GROUP);
-        if (StringUtils.isEmpty(group) && StringUtils.isEmpty(propertyGroup)) {
-            setGroup(GroupConstant.DEFAULT);
-        } else if (!StringUtils.isEmpty(propertyGroup)) {
-            setGroup(propertyGroup);
-        } else if (!StringUtils.isEmpty(group)) {
-            setGroup(group);
-        }
+    private void setDefaultGroup() {
+        log.info("========================= InitEnvironment defaultGroup:{}", this.defaultGroup);
     }
+
 
     private void setBasePackage() {
         AnnotationAttributes attributes = AnnotationAttributes
@@ -139,9 +155,12 @@ public abstract class AbstractInitEnvironment extends AbstractMetadata implement
     }
 
     @Override
-    public void updateGroup(String newGroup) {
-        this.group = newGroup;
-        getClientInfo().setGroup(newGroup);
+    public void updateGroup(String application, String newGroup) {
+        if(defaultApplication.equals(application)){
+            this.defaultGroup = newGroup;
+        }
+        Map<String, String> agMap = getClientInfo().getApplicationGroupMap();
+        agMap.put(application, newGroup);
     }
 
     @Override

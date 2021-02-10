@@ -33,5 +33,7 @@ public interface TaskMapper {
 
     int updateByPrimaryKeyWithBLOBs(Task record);
 
+    int updateByTaskNo(Task record);
+
     int updateByPrimaryKey(Task record);
 }

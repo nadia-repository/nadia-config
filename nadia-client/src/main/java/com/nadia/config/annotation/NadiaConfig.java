@@ -8,9 +8,9 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface NadiaConfig {
-    Class<? extends Callback> clazz();
+    Class<? extends Callback> clazz() default Callback.class;
 
-    CallbackScenes[] callbackScenes() default {CallbackScenes.UPDATE_VALUE, CallbackScenes.SWITCH_GROUP};
+    NadiaConfig.CallbackScenes[] callbackScenes() default {NadiaConfig.CallbackScenes.UPDATE_VALUE, NadiaConfig.CallbackScenes.SWITCH_GROUP};
 
     boolean exclude() default false;
 
@@ -19,4 +19,9 @@ public @interface NadiaConfig {
         SWITCH_GROUP,
         UPDATE_VALUE,
     }
+
+    //可以指定该配置所属Application
+    String application() default "";
+    //可以指定该配置所属Group
+    String group() default "";
 }

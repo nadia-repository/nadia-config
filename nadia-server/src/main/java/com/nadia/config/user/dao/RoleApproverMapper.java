@@ -3,7 +3,6 @@ package com.nadia.config.user.dao;
 import com.nadia.config.user.domain.Role;
 import com.nadia.config.user.domain.RoleApprover;
 import com.nadia.config.user.domain.RoleApproverCriteria;
-
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

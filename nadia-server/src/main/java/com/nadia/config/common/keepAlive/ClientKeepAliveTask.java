@@ -2,7 +2,7 @@ package com.nadia.config.common.keepAlive;
 
 import com.alibaba.fastjson.JSONObject;
 import com.nadia.config.bean.ClientInfo;
-import com.nadia.config.redis.RedisService;
+import com.nadia.config.redis.ConfigCenterRedisService;
 import com.nadia.config.utils.IpPortUtil;
 import com.nadia.config.utils.RedisKeyUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class ClientKeepAliveTask {
 
     @Resource
-    private RedisService redisService;
+    private ConfigCenterRedisService configCenterRedisService;
 
     private String ip = IpPortUtil.getLocalIP();
 
@@ -46,24 +46,39 @@ public class ClientKeepAliveTask {
 
     private void keepClientAlive(){
         log.info("========================= Server[{}] Keep Alive with Redis Start =========================",ip);
-        Map<String, String> serverMap = redisService.hgetAll(RedisKeyUtil.getClints());
-        serverMap.forEach((k,v) -> {
-            ClientInfo clientInfo = JSONObject.parseObject(v, ClientInfo.class);
-            long timestamp = clientInfo.getTimestamp();
-            if((new Date().getTime() - timestamp)/(1000*60) > 1){ //>1min
-                String times = redisService.get(RedisKeyUtil.getClientRetryTimes(String.valueOf(clientInfo.hashCode())));
-                if(StringUtils.isEmpty(times)){
-                    redisService.setNX(RedisKeyUtil.getClientRetryTimes(String.valueOf(clientInfo.hashCode())),"1",3000);
-                    //todo
-                    //通知客户端
-                }else if(Integer.valueOf(times) > 1){
+        try {
+            Map<String, String> serverMap = configCenterRedisService.hgetAll(RedisKeyUtil.getClints());
+            serverMap.forEach((k,v) -> {
+                ClientInfo clientInfo = JSONObject.parseObject(v, ClientInfo.class);
+                long currentTimestamp = System.currentTimeMillis();
+                long timestamp = clientInfo.getTimestamp();
+                if((currentTimestamp - timestamp) < 0 || (currentTimestamp - timestamp)/(1000*60) > 2){ //>1min
+                    String times = configCenterRedisService.get(RedisKeyUtil.getClientRetryTimes(String.valueOf(clientInfo.hashCode())));
+//                if(StringUtils.isEmpty(times)){
+//                    redisService.setNX(RedisKeyUtil.getClientRetryTimes(String.valueOf(clientInfo.hashCode())),"1",3000);
+//                    //todo
+//                    //通知客户端
+//                }else if(Integer.valueOf(times) > 1){
                     //client offline ,delete instance info
-                    redisService.del(RedisKeyUtil.getClints(),String.valueOf(clientInfo.hashCode()));
-                    redisService.del(RedisKeyUtil.getInstance(clientInfo.getApplication(),clientInfo.getGroup()),clientInfo.getName());
-                    redisService.del(RedisKeyUtil.getInstanceConfig(clientInfo.getApplication(),clientInfo.getGroup(),clientInfo.getName()));
+                    configCenterRedisService.del(RedisKeyUtil.getClints(),String.valueOf(clientInfo.hashCode()));
+                    Map<String, String> agMap = clientInfo.getApplicationGroupMap();
+                    for (String application : agMap.keySet()) {
+                        String group = agMap.get(application);
+                        configCenterRedisService.del(RedisKeyUtil.getInstance(application,group),clientInfo.getName());
+                        configCenterRedisService.del(RedisKeyUtil.getInstanceConfig(application,group,clientInfo.getName()));
+                    }
+//                }
                 }
-            }
-        });
+            });
+        } catch (Exception e) {
+            // ignore exception
+            log.warn("Config Center Server KeepAlive process occurs error", e);
+        }
         log.info("========================= Server[{}] Keep Alive with Redis End   =========================",ip);
+    }
+
+    public static void main(String[] args) {
+        long timestamp = 1583995192785l;
+        System.out.println((new Date().getTime() - timestamp) / (1000 * 60));
     }
 }

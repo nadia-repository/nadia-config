@@ -10,7 +10,9 @@
         @change="handleApplicationChange"
         @clear="handleApplicationChange"
       >
-        <el-option v-for="item in applications" :key="item.id" :label="item.name" :value="item.id" />
+        <el-option-group v-for="appgroup in appgroups" :key="appgroup.label" :label="appgroup.label">
+            <el-option v-for="item in appgroup.items" :key="item.id" :label="item.name" :value="item.id" />
+        </el-option-group>
       </el-select>
       <el-select v-model="params.group" placeholder="Group" clearable style="width: 120px" class="filter-item">
         <el-option v-for="item in groups" :key="item.id" :label="item.name" :value="item.id" />
@@ -135,7 +137,7 @@ export default {
   },
   data() {
     return {
-      applications: [],
+      appgroups: [],
       groups: [],
       pickerOptions: {
         shortcuts: [{
@@ -211,7 +213,7 @@ export default {
       getApplications()
         .then(response => {
           if (isSuccessful(response)) {
-            this.applications = response.data
+            this.appgroups = response.data
           }
         })
         .catch(error => {

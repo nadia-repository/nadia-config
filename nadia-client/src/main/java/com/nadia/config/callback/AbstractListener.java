@@ -1,8 +1,8 @@
 package com.nadia.config.callback;
 
+import com.nadia.config.constant.OrderConstant;
 import com.nadia.config.spi.InitEnvironment;
 import com.nadia.config.spi.LoadConfig;
-import com.nadia.config.constant.OrderConstant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 

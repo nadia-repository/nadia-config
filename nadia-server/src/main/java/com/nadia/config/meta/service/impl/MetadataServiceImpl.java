@@ -5,6 +5,8 @@ import com.nadia.config.bean.ClientValueBody;
 import com.nadia.config.common.context.UserContextHolder;
 import com.nadia.config.common.security.GlobalLock;
 import com.nadia.config.common.transaction.AfterCommitTaskRegister;
+import com.nadia.config.notification.enums.View;
+import com.nadia.config.publish.RedisPubSub;
 import com.nadia.config.constant.GroupConstant;
 import com.nadia.config.enums.ConfigStatusEnum;
 import com.nadia.config.listener.enumerate.EventType;
@@ -17,20 +19,18 @@ import com.nadia.config.meta.dto.request.CompareRequest;
 import com.nadia.config.meta.dto.request.GroupRequest;
 import com.nadia.config.meta.dto.request.SwitchGroupInstancesRequest;
 import com.nadia.config.meta.dto.response.*;
+import com.nadia.config.meta.exception.MetaException;
 import com.nadia.config.meta.repo.ApplicationRepo;
 import com.nadia.config.meta.repo.ConfigRepo;
 import com.nadia.config.meta.repo.GroupRepo;
 import com.nadia.config.meta.service.MetadataService;
 import com.nadia.config.notification.enums.OperationType;
 import com.nadia.config.notification.enums.TargetType;
-import com.nadia.config.notification.enums.View;
 import com.nadia.config.notification.service.OperationLogService;
-import com.nadia.config.publish.RedisPubSub;
-import com.nadia.config.redis.RedisService;
+import com.nadia.config.redis.ConfigCenterRedisService;
 import com.nadia.config.utils.ClientValueUtil;
 import com.nadia.config.utils.RedisKeyUtil;
 import com.nadia.config.utils.TopicUtil;
-import com.nadia.config.meta.exception.MetaException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.task.TaskExecutor;
@@ -54,7 +54,7 @@ public class MetadataServiceImpl implements MetadataService {
     @Resource
     private ConfigRepo configRepo;
     @Resource
-    private RedisService redisService;
+    private ConfigCenterRedisService configCenterRedisService;
     @Resource
     private RedisPubSub redisPubSub;
     @Resource
@@ -64,7 +64,7 @@ public class MetadataServiceImpl implements MetadataService {
 
     @Override
     public List<ApplicationResponse> getApplications() {
-        List<String> applications = redisService.toList(RedisKeyUtil.getApplication());
+        List<String> applications = configCenterRedisService.toList(RedisKeyUtil.getApplication());
         List<ApplicationResponse> responses = applications.stream().map(s -> {
             ApplicationResponse applicationResponse = new ApplicationResponse();
             applicationResponse.setName(s);
@@ -88,7 +88,7 @@ public class MetadataServiceImpl implements MetadataService {
             List<Group> groups = groupRepo.selectByApplicationId(application.getId());
             if (groups.size() == 1) {
                 response.setGroup(groups.get(0).getName());
-                List<String> instances = redisService.toList(RedisKeyUtil.getInstance(application.getName(), groups.get(0).getName()));
+                List<String> instances = configCenterRedisService.toList(RedisKeyUtil.getInstance(application.getName(), groups.get(0).getName()));
                 response.setInstances(String.join("\n", instances));
 //                response.setHasChildren(false);
             } else {
@@ -96,14 +96,14 @@ public class MetadataServiceImpl implements MetadataService {
                 groups.forEach(group -> {
                     if (group.getName().equals(GroupConstant.DEFAULT)) {
                         response.setGroup(groups.get(0).getName());
-                        List<String> instances = redisService.toList(RedisKeyUtil.getInstance(application.getName(), groups.get(0).getName()));
+                        List<String> instances = configCenterRedisService.toList(RedisKeyUtil.getInstance(application.getName(), groups.get(0).getName()));
                         response.setInstances(String.join("\n", instances));
 //                        response.setHasChildren(false);
                     } else {
                         MetadataResponse children = new MetadataResponse();
                         BeanUtils.copyProperties(response, children);
                         children.setGroup(group.getName());
-                        List<String> instances = redisService.toList(RedisKeyUtil.getInstance(application.getName(), group.getName()));
+                        List<String> instances = configCenterRedisService.toList(RedisKeyUtil.getInstance(application.getName(), group.getName()));
                         children.setInstances(String.join("\n", instances));
                         children.setId(Long.valueOf(String.valueOf(application.getId()) + String.valueOf(group.getId())));
                         childrens.add(children);
@@ -123,7 +123,7 @@ public class MetadataServiceImpl implements MetadataService {
     @Override
     public void addApplication(ApplicationRequest applicationRequest) {
 
-        boolean exists = redisService.exists(RedisKeyUtil.getApplication(), applicationRequest.getApplication());
+        boolean exists = configCenterRedisService.exists(RedisKeyUtil.getApplication(), applicationRequest.getApplication());
         if (!exists) {
             //DB-application
             Application applicationRecord = new Application();
@@ -157,21 +157,21 @@ public class MetadataServiceImpl implements MetadataService {
 
     private void addRedisApplication(String application){
         //add application
-        redisService.sadd(RedisKeyUtil.getApplication(), application);
+        configCenterRedisService.sadd(RedisKeyUtil.getApplication(), application);
         //add default group
-        redisService.sadd(RedisKeyUtil.getGroup(application), GroupConstant.DEFAULT);
+        configCenterRedisService.sadd(RedisKeyUtil.getGroup(application), GroupConstant.DEFAULT);
     }
 
     @GlobalLock(key = "deleteApplication")
     @Transactional
     @Override
     public void deleteApplication(ApplicationRequest applicationRequest) {
-        boolean exists = redisService.exists(RedisKeyUtil.getInstance(applicationRequest.getApplication(), applicationRequest.getGroup()));
+        boolean exists = configCenterRedisService.exists(RedisKeyUtil.getInstance(applicationRequest.getApplication(), applicationRequest.getGroup()));
         if (exists) {
             throw new MetaException(2002L);
         }
         if (GroupConstant.DEFAULT.equals(applicationRequest.getGroup())) {
-            Set<String> groups = redisService.toSet(RedisKeyUtil.getGroup(applicationRequest.getApplication()));
+            Set<String> groups = configCenterRedisService.toSet(RedisKeyUtil.getGroup(applicationRequest.getApplication()));
             if (groups.size() > 1) {
                 throw new MetaException(2003L);
             }
@@ -201,10 +201,10 @@ public class MetadataServiceImpl implements MetadataService {
     }
 
     private void deleteRedisApplication(String application,String group){
-        redisService.del(RedisKeyUtil.getGroup(application), group);
-        redisService.del(RedisKeyUtil.getGroupConfig(application, group));
+        configCenterRedisService.del(RedisKeyUtil.getGroup(application), group);
+        configCenterRedisService.del(RedisKeyUtil.getGroupConfig(application, group));
         if (GroupConstant.DEFAULT.equals(group)) {
-            redisService.del(RedisKeyUtil.getApplication(), application);
+            configCenterRedisService.del(RedisKeyUtil.getApplication(), application);
         }
     }
 
@@ -224,7 +224,7 @@ public class MetadataServiceImpl implements MetadataService {
 
     @Override
     public List<GroupResponse> getGroups(String application) {
-        List<String> groups = redisService.toList(RedisKeyUtil.getGroup(application));
+        List<String> groups = configCenterRedisService.toList(RedisKeyUtil.getGroup(application));
         List<GroupResponse> responses = groups.stream().map(s -> {
             GroupResponse response = new GroupResponse();
             response.setName(s);
@@ -237,7 +237,7 @@ public class MetadataServiceImpl implements MetadataService {
     @Transactional
     @Override
     public void addGroup(GroupRequest groupRequest) {
-        boolean exists = redisService.exists(RedisKeyUtil.getGroup(groupRequest.getApplication()), groupRequest.getTargetGroup());
+        boolean exists = configCenterRedisService.exists(RedisKeyUtil.getGroup(groupRequest.getApplication()), groupRequest.getTargetGroup());
         if (exists) {
             throw new MetaException(2004L);
         }
@@ -287,16 +287,16 @@ public class MetadataServiceImpl implements MetadataService {
     }
 
     private void addRedisGroup(String application,String sourceGroup,String targetGroup){
-        redisService.sadd(RedisKeyUtil.getGroup(application), targetGroup);
+        configCenterRedisService.sadd(RedisKeyUtil.getGroup(application), targetGroup);
         if(!StringUtils.isEmpty(sourceGroup)){
-            Map<String, String> sourceConfigs = redisService.hgetAll(RedisKeyUtil.getGroupConfig(application, sourceGroup));
-            redisService.hmset(RedisKeyUtil.getGroupConfig(application, targetGroup), sourceConfigs);
+            Map<String, String> sourceConfigs = configCenterRedisService.hgetAll(RedisKeyUtil.getGroupConfig(application, sourceGroup));
+            configCenterRedisService.hmset(RedisKeyUtil.getGroupConfig(application, targetGroup), sourceConfigs);
         }
     }
 
     @Override
     public List<InstanceResponse> getInstances(String application, String group) {
-        List<String> instances = redisService.toList(RedisKeyUtil.getInstance(application, group));
+        List<String> instances = configCenterRedisService.toList(RedisKeyUtil.getInstance(application, group));
         List<InstanceResponse> responses = instances.stream().map(s -> {
             InstanceResponse response = new InstanceResponse();
             response.setName(s);
@@ -307,8 +307,8 @@ public class MetadataServiceImpl implements MetadataService {
 
     @Override
     public List<InstanceConfigsResponse> getInstanceConfig(String application, String group, String instance) {
-        Map<String, String> groupConfigs = redisService.hgetAll(RedisKeyUtil.getGroupConfig(application, group));
-        Map<String, String> instanceConfigs = redisService.hgetAll(RedisKeyUtil.getInstanceConfig(application, group, instance));
+        Map<String, String> groupConfigs = configCenterRedisService.hgetAll(RedisKeyUtil.getGroupConfig(application, group));
+        Map<String, String> instanceConfigs = configCenterRedisService.hgetAll(RedisKeyUtil.getInstanceConfig(application, group, instance));
         List<InstanceConfigsResponse> responses = new LinkedList<>();
         if (groupConfigs != null && groupConfigs.size() > 0) {
             for (String key : groupConfigs.keySet()) {
@@ -331,11 +331,11 @@ public class MetadataServiceImpl implements MetadataService {
     private InstanceConfigsResponse backageResponse(String serverkey, String serverValue, String clientKey, String clientValues) {
         ClientValueBody deserializer = ClientValueUtil.deserializer(clientValues);
         InstanceConfigsResponse response = new InstanceConfigsResponse();
-        response.setClientConfigNew(deserializer.getNewValue())
-                .setClientConfigOld(deserializer.getOldValue())
-                .setServerConfig(serverValue)
-                .setServerKey(serverkey)
-                .setClientKey(clientKey);
+        response.setClientConfigNew(deserializer.getNewValue());
+        response.setClientConfigOld(deserializer.getOldValue());
+        response.setServerConfig(serverValue);
+        response.setServerKey(serverkey);
+        response.setClientKey(clientKey);
         return response;
     }
 
@@ -354,7 +354,7 @@ public class MetadataServiceImpl implements MetadataService {
             valueHeader.put("props", group + "_value");
             configHeader.add(valueHeader);
 
-            Map<String, String> configs = redisService.hgetAll(RedisKeyUtil.getGroupConfig(compareRequest.getApplication(), group));
+            Map<String, String> configs = configCenterRedisService.hgetAll(RedisKeyUtil.getGroupConfig(compareRequest.getApplication(), group));
             for (String key : configs.keySet()) {
                 String value = configs.get(key);
                 if (keyTable.containsKey(key)) {
@@ -378,13 +378,13 @@ public class MetadataServiceImpl implements MetadataService {
 
     @Override
     public List<GroupInstanceResponse> getGroupInstances(String application) {
-        List<String> groups = redisService.toList(RedisKeyUtil.getGroup(application));
+        List<String> groups = configCenterRedisService.toList(RedisKeyUtil.getGroup(application));
         List<GroupInstanceResponse> responses = new LinkedList<>();
         for (int i = 0; i < groups.size(); i++) {
             GroupInstanceResponse response = new GroupInstanceResponse();
             response.setKey(i);
             response.setGroup(groups.get(i));
-            List<String> instances = redisService.toList(RedisKeyUtil.getInstance(application, groups.get(i)));
+            List<String> instances = configCenterRedisService.toList(RedisKeyUtil.getInstance(application, groups.get(i)));
             List<InstanceResponse> instanceList = new LinkedList<>();
             for (int k = 0; k < instances.size(); k++) {
                 InstanceResponse instance = new InstanceResponse();
@@ -406,7 +406,7 @@ public class MetadataServiceImpl implements MetadataService {
         newGroup.forEach(groupInstanceResponse -> {
             String group = groupInstanceResponse.getGroup();
             Set<String> newInstanceList = groupInstanceResponse.getInstances().stream().map(instance -> instance.getName()).collect(Collectors.toSet());
-            Set<String> oldInstanceList = redisService.toSet(RedisKeyUtil.getInstance(switchGroupInstancesRequest.getApplication(), group));
+            Set<String> oldInstanceList = configCenterRedisService.toSet(RedisKeyUtil.getInstance(switchGroupInstancesRequest.getApplication(), group));
 
             //instance switch to
             Set<String> result = new HashSet<String>();

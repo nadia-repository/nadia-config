@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 
-public interface RedisService {
+public interface ConfigCenterRedisService {
     void delAll(String key);
 
     void del(String key);

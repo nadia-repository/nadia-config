@@ -1,13 +1,14 @@
 package com.nadia.config.spring;
 
+import com.nadia.config.callback.Listener;
 import com.nadia.config.notifycenter.NotifyFactory;
 import com.nadia.config.spi.InitEnvironment;
 import com.nadia.config.spi.LoadConfig;
-import com.nadia.config.callback.Listener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-
+//@Component
 public class ConfigBootstart {
 
     @Autowired
@@ -19,7 +20,6 @@ public class ConfigBootstart {
     @Autowired
     private NotifyFactory notifyFactory;
 
-    @PostConstruct
     public void start(){
         //bootstart notify start
         notifyFactory.startPush();
@@ -36,4 +36,5 @@ public class ConfigBootstart {
         //bootstart notify end
         notifyFactory.stopPush();
     }
+
 }

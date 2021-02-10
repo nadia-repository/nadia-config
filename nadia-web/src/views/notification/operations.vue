@@ -2,15 +2,6 @@
   <div class="app-container">
     <div class="filter-container">
       <el-select
-        v-model="params.type"
-        placeholder="Type"
-        clearable
-        style="width: 120px"
-        class="filter-item"
-      >
-        <el-option v-for="item in typeOptions" :key="item" :label="item" :value="item" />
-      </el-select>
-      <el-select
         v-model="params.view"
         placeholder="Page"
         clearable
@@ -18,6 +9,15 @@
         class="filter-item"
       >
         <el-option v-for="item in pageOptions" :key="item.name" :label="item.name" :value="item.value" />
+      </el-select>
+      <el-select
+        v-model="params.type"
+        placeholder="Type"
+        clearable
+        style="width: 120px"
+        class="filter-item"
+      >
+        <el-option v-for="item in typeOptions" :key="item" :label="item" :value="item" />
       </el-select>
       <el-input
         v-model="params.createdBy"

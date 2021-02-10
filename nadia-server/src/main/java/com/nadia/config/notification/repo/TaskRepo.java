@@ -87,4 +87,8 @@ public class TaskRepo {
     public void updateByPrimaryKeySelective(Task Task) {
         taskMapper.updateByPrimaryKeySelective(Task);
     }
+
+    public void updateByTaskNo(Task task){
+        taskMapper.updateByTaskNo(task);
+    }
 }

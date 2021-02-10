@@ -33,7 +33,7 @@
                 </el-popover>
               </template>
             </el-table-column>
-            <el-table-column v-if="activeName=='COMPLETE'" label="Proceed" align="center">
+            <el-table-column v-if="activeName=='COMPLETED'" label="Proceed" align="center">
               <template slot-scope="{row}">
                 <el-popover
                   placement="bottom"
@@ -57,7 +57,7 @@
                 <span>{{ row.createdBy }}</span>
               </template>
             </el-table-column>
-            <el-table-column v-if="activeName=='COMPLETE'" prop="endDate" label="End at" sortable align="center">
+            <el-table-column v-if="activeName=='COMPLETED'" prop="endDate" label="End at" sortable align="center">
               <template slot-scope="{row}">
                 <span>{{ row.endAt }}</span>
               </template>
@@ -77,7 +77,7 @@
                 </el-button>
               </template>
             </el-table-column>
-            <el-table-column v-if="activeName=='COMPLETE'" label="status" align="center">
+            <el-table-column v-if="activeName=='COMPLETED'" label="status" align="center">
               <template slot-scope="{row}">
                 <el-tag :type="row.status | statusFilter">{{ row.status }}</el-tag>
               </template>
@@ -123,7 +123,7 @@ export default {
       tabMapOptions: [
         { label: 'Pending Task', key: 'PENDING' },
         { label: 'Processing Task', key: 'PROCESSING' },
-        { label: 'Complete Task', key: 'COMPLETE' }
+        { label: 'Completed Task', key: 'COMPLETED' }
       ],
       activeName: 'PENDING',
       listLoading: true,
@@ -176,7 +176,7 @@ export default {
     }
     if (this.activeName === 'PENDING') {
       this.fetchTasks()
-    } else if (this.activeName === 'COMPLETE') {
+    } else if (this.activeName === 'COMPLETED') {
       this.fetchHistoryTasks()
     } else if (this.activeName === 'PROCESSING') {
       this.fetchProcessingTasks()
@@ -187,7 +187,7 @@ export default {
     changePane() {
       if (this.activeName === 'PENDING') {
         this.fetchTasks()
-      } else if (this.activeName === 'COMPLETE') {
+      } else if (this.activeName === 'COMPLETED') {
         this.fetchHistoryTasks()
       } else if (this.activeName === 'PROCESSING') {
         this.fetchProcessingTasks()

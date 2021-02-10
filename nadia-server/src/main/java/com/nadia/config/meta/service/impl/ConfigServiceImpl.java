@@ -12,8 +12,6 @@ import com.nadia.config.common.security.GlobalLock;
 import com.nadia.config.common.transaction.AfterCommitTaskRegister;
 import com.nadia.config.common.util.CollectUtils;
 import com.nadia.config.enums.ConfigStatusEnum;
-import com.nadia.config.listener.enumerate.EventType;
-import com.nadia.config.listener.messageBody.UpdateValueMessageBody;
 import com.nadia.config.meta.domain.*;
 import com.nadia.config.meta.dto.request.ConfigRequest;
 import com.nadia.config.meta.dto.request.ExportConfigRequest;
@@ -22,6 +20,7 @@ import com.nadia.config.meta.dto.request.ReceiveRequest;
 import com.nadia.config.meta.dto.response.*;
 import com.nadia.config.meta.repo.*;
 import com.nadia.config.meta.service.ConfigService;
+import com.nadia.config.meta.service.event.EventPublisher;
 import com.nadia.config.notification.dto.request.TaskParameter;
 import com.nadia.config.notification.enums.Event;
 import com.nadia.config.notification.enums.OperationType;
@@ -29,16 +28,16 @@ import com.nadia.config.notification.enums.TargetType;
 import com.nadia.config.notification.enums.View;
 import com.nadia.config.notification.service.OperationLogService;
 import com.nadia.config.notification.service.TaskService;
-import com.nadia.config.publish.RedisPubSub;
-import com.nadia.config.redis.RedisService;
+import com.nadia.config.redis.ConfigCenterRedisService;
 import com.nadia.config.utils.RedisKeyUtil;
-import com.nadia.config.utils.TopicUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,9 +60,7 @@ public class ConfigServiceImpl implements ConfigService {
     @Resource
     private ConfigRepo configRepo;
     @Resource
-    private RedisService redisService;
-    @Resource
-    private RedisPubSub redisPubSub;
+    private ConfigCenterRedisService configCenterRedisService;
     @Resource
     private ApplicationRepo applicationRepo;
     @Resource
@@ -78,6 +75,9 @@ public class ConfigServiceImpl implements ConfigService {
     private RoleConfigRepo roleConfigRepo;
     @Resource
     private OperationLogService operationLogService;
+    @Autowired
+    @Qualifier("redisEventPublisher")
+    private EventPublisher eventPublisher;
 
     @Override
     public PageBean<ConfigResponse> getConfigs(ConfigRequest request) {
@@ -188,6 +188,14 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     private void doAfterSuccessfulDeletion(List<Long> ids) {
+        //delete redis
+        List<Config> configs = configRepo.selectByIds(ids);
+        configs.stream().forEach(config -> {
+            Application application = applicationRepo.selectByPrimaryKey(config.getApplicationId());
+            Group group = groupRepo.selectByPrimaryKey(config.getGroupId());
+            String groupConfig = RedisKeyUtil.getGroupConfig(application.getName(), group.getName());
+            configCenterRedisService.del(groupConfig,config.getKey());
+        });
         taskService.startTask(new TaskParameter(new TaskParameter.Deletion(ids)));
         operationLogService.log(View.CONFIGS, OperationType.DELETE, TargetType.CONFIG, null, buildJSONObject("ids", ids));
     }
@@ -269,9 +277,13 @@ public class ConfigServiceImpl implements ConfigService {
     public void publish(Long configId) {
         configRepo.updateWhenPublished(configId);
         configHistoryRepo.insertSelective(buildHistory(configId));
+        operationLogService.log(
+            View.CONFIGS, OperationType.PUBLISH, TargetType.CONFIG,
+            null, buildJSONObject("id", configId));
+
         AfterCommitTaskRegister.registerTask(
             () -> taskExecutor.execute(
-                () -> doAfterSuccessfulPublishion(configId)
+                () -> eventPublisher.onPublished(configId)
             )
         );
     }
@@ -372,7 +384,7 @@ public class ConfigServiceImpl implements ConfigService {
             }
             if (StringUtils.isBlank(importedConfig.getGroup()) ||
                 importedConfig.getGroup().trim().length() > 64) {
-                log.warn("Illegal value, application: {}", importedConfig.getGroup());
+                log.warn("Illegal value, group: {}", importedConfig.getGroup());
                 continue;
             }
             if (StringUtils.isBlank(importedConfig.getName()) ||
@@ -383,10 +395,6 @@ public class ConfigServiceImpl implements ConfigService {
             if (StringUtils.isBlank(importedConfig.getKey()) ||
                 importedConfig.getKey().trim().length() > 128) {
                 log.warn("Illegal value, key: {}", importedConfig.getKey());
-                continue;
-            }
-            if (StringUtils.isBlank(importedConfig.getValue())) {
-                log.warn("Illegal value, value: {}", importedConfig.getValue());
                 continue;
             }
             if (StringUtils.isBlank(importedConfig.getDescription()) ||
@@ -538,10 +546,10 @@ public class ConfigServiceImpl implements ConfigService {
         if (config != null) {
             Application app = applicationRepo.selectByPrimaryKey(config.getApplicationId());
             Group group = groupRepo.selectByPrimaryKey(config.getGroupId());
-            Set<String> instances = redisService.smembers(RedisKeyUtil.getInstance(app.getName(), group.getName()));
+            Set<String> instances = configCenterRedisService.smembers(RedisKeyUtil.getInstance(app.getName(), group.getName()));
             if (CollectionUtils.isNotEmpty(instances)) {
                 for (String instance : instances) {
-                    Map<String, String> configs = redisService.hgetAll(RedisKeyUtil.getInstanceConfig(app.getName(), group.getName(), instance));
+                    Map<String, String> configs = configCenterRedisService.hgetAll(RedisKeyUtil.getInstanceConfig(app.getName(), group.getName(), instance));
                     Set<String> keys = configs.keySet();
                     if (CollectionUtils.isNotEmpty(keys)) {
                         ConfigInstanceResponse configInstance = new ConfigInstanceResponse();
@@ -560,21 +568,6 @@ public class ConfigServiceImpl implements ConfigService {
             }
         }
         return configInstances;
-    }
-
-    private void doAfterSuccessfulPublishion(Long configId) {
-        Config config = configRepo.selectByPrimaryKey(configId);
-        Application application = applicationRepo.selectByPrimaryKey(config.getApplicationId());
-        Group group = groupRepo.selectByPrimaryKey(config.getGroupId());
-        redisService.hset(RedisKeyUtil.getGroupConfig(application.getName(), group.getName()), config.getKey(), config.getValue());
-        UpdateValueMessageBody messageBody = new UpdateValueMessageBody();
-        messageBody.setGroup(group.getName());
-        messageBody.setKey(config.getKey());
-        messageBody.setValue(config.getValue());
-        redisPubSub.notifyClient(TopicUtil.getTopicApplication(application.getName()), messageBody, EventType.UPDATE_VALUE);
-
-        operationLogService.log(View.CONFIGS, OperationType.PUBLISH, TargetType.CONFIG,
-            null, buildJSONObject("id", configId));
     }
 
     private JSONObject buildJSONObject(String key, Object value) {

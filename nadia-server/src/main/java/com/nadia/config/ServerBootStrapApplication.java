@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @ComponentScan(value = {"com.nadia"})
 @ImportResource(locations = { "classpath:mybatis/mapper/**/*.xml" })
 @EnableAsync
-@MapperScan({"com.nadia.*.dao","com.nadia.*.*.dao"})
+@MapperScan({"com.nadia.*.*.dao"})
 public class ServerBootStrapApplication {
 
 	public static void main(String[] args) {

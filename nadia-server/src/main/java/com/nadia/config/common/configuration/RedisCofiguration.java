@@ -1,14 +1,15 @@
 package com.nadia.config.common.configuration;
 
 import com.nadia.config.publish.RedisPubSub;
-import com.nadia.config.redis.RedisService;
-import com.nadia.config.redis.RedisServiceImpl;
+import com.nadia.config.redis.ConfigCenterRedisService;
+import com.nadia.config.redis.ConfigCenterRedisServiceImpl;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import redis.clients.jedis.JedisPoolConfig;
 
@@ -55,8 +56,8 @@ public class RedisCofiguration {
     }
 
     @Bean
-    public RedisService getRedisService(){
-        return new RedisServiceImpl();
+    public ConfigCenterRedisService getRedisService(){
+        return new ConfigCenterRedisServiceImpl();
     }
 
 //    @Bean("configCenterRedisListenerContainer")

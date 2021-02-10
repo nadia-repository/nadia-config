@@ -1,5 +1,6 @@
 package com.nadia.config.enumerate;
 
+import com.nadia.config.common.exception.ConfigBaseException;
 import com.nadia.config.common.exception.UpdateConfigException;
 
 import java.math.BigDecimal;

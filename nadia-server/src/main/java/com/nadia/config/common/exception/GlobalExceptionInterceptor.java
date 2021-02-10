@@ -81,12 +81,4 @@ public class GlobalExceptionInterceptor {
         return response;
     }
 
-    @ResponseBody
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public RestBody handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
-        log.warn("Method argument is not valid, message: {}",
-            ex.getBindingResult().getFieldError().getDefaultMessage());
-        return RestBody.fail(ex.getBindingResult().getFieldError().getDefaultMessage());
-    }
-
 }

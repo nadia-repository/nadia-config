@@ -1,5 +1,8 @@
 # Nadia Config Center
 
+## 更新日志
+- [changelog](changelog/README.md)
+
 ## 组件介绍
 - [nadia-client](nadia-client/README.md)
 - [nadia-server](nadia-server/README.md)

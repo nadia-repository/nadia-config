@@ -1,5 +1,6 @@
 package com.nadia.config.user.dto.request;
 
+import com.nadia.config.user.enums.UserStatusEnum;
 import lombok.Data;
 
 /**

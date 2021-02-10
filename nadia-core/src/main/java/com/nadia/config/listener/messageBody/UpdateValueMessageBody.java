@@ -10,5 +10,6 @@ import lombok.Data;
 public class UpdateValueMessageBody implements MessageBody {
     private String key;
     private String value;
+    private String application;
     private String group;
 }

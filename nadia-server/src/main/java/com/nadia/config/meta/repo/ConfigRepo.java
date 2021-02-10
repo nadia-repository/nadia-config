@@ -7,13 +7,13 @@ import com.nadia.config.common.context.UserContextHolder;
 import com.nadia.config.enums.ConfigStatusEnum;
 import com.nadia.config.meta.dao.ConfigMapper;
 import com.nadia.config.meta.dao.RoleConfigMapper;
-import com.nadia.config.meta.dto.request.ConfigRequest;
-import com.nadia.config.meta.dto.request.ExportConfigRequest;
-import com.nadia.config.meta.dto.response.ExportConfigResponse;
 import com.nadia.config.meta.domain.Config;
 import com.nadia.config.meta.domain.ConfigCriteria;
 import com.nadia.config.meta.domain.RoleConfig;
 import com.nadia.config.meta.domain.RoleConfigCriteria;
+import com.nadia.config.meta.dto.request.ConfigRequest;
+import com.nadia.config.meta.dto.request.ExportConfigRequest;
+import com.nadia.config.meta.dto.response.ExportConfigResponse;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Repository;
@@ -43,7 +43,7 @@ public class ConfigRepo {
     public Page<Config> pageableSelectByConfigRequest(ConfigRequest request) {
         ConfigCriteria example = new ConfigCriteria();
         ConfigCriteria.Criteria criteria = example.createCriteria();
-
+        example.setOrderByClause("updated_at desc");
         RoleConfigCriteria roleConfigCriteria = new RoleConfigCriteria();
         roleConfigCriteria.createCriteria().andRoleIdIn(UserContextHolder.getUserDetail().getRoleIds());
         List<RoleConfig> roleConfigs = roleConfigMapper.selectByExample(roleConfigCriteria);
@@ -67,10 +67,10 @@ public class ConfigRepo {
             criteria.andGroupIdEqualTo(request.getGroupId());
         }
         if (StringUtils.isNotBlank(request.getName())) {
-            criteria.andNameLike("%".concat(request.getName()));
+            criteria.andNameLike("%".concat(request.getName()).concat("%"));
         }
         if (StringUtils.isNotBlank(request.getKey())) {
-            criteria.andKeyLike("%".concat(request.getKey()));
+            criteria.andKeyLike("%".concat(request.getKey()).concat("%"));
         }
 
         PageHelper.startPage(request.getPage(), request.getLimit());

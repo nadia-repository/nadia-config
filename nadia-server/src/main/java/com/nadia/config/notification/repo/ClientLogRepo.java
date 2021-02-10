@@ -1,5 +1,6 @@
 package com.nadia.config.notification.repo;
 
+import com.github.pagehelper.PageHelper;
 import com.nadia.config.notification.dao.ClientLogMapper;
 import com.nadia.config.notification.domain.ClientLog;
 import com.nadia.config.notification.domain.ClientLogCriteria;
@@ -26,7 +27,8 @@ public class ClientLogRepo {
         return clientLogMapper.insertSelective(record);
     }
 
-    public List<ClientLog> logs(String application,String group,String instance,String traceId,String type,String level,List<String> createdAt){
+    public List<ClientLog> logs(String application,String group,String instance,String traceId,String type,String level,List<String> createdAt,int pageNum, int pageSize){
+        PageHelper.startPage(pageNum, pageSize);
         ClientLogCriteria example = new ClientLogCriteria();
         example.setOrderByClause("created_at desc");
         ClientLogCriteria.Criteria criteria = example.createCriteria();

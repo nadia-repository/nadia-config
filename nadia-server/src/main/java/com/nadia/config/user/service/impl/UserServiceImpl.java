@@ -1,26 +1,26 @@
 package com.nadia.config.user.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.nadia.config.user.domain.User;
-import com.nadia.config.user.domain.UserRole;
-import com.nadia.config.user.dto.response.*;
-import com.nadia.config.user.enums.UserStatusEnum;
-import com.nadia.config.user.repo.UserRepo;
-import com.nadia.config.user.service.RoleService;
-import com.nadia.config.user.service.UserService;
 import com.nadia.config.common.context.UserContextHolder;
 import com.nadia.config.common.context.UserDetail;
 import com.nadia.config.notification.enums.OperationType;
 import com.nadia.config.notification.enums.TargetType;
 import com.nadia.config.notification.enums.View;
 import com.nadia.config.notification.service.OperationLogService;
-import com.nadia.config.redis.RedisService;
+import com.nadia.config.redis.ConfigCenterRedisService;
+import com.nadia.config.user.domain.User;
+import com.nadia.config.user.domain.UserRole;
 import com.nadia.config.user.dto.request.LoginRequest;
 import com.nadia.config.user.dto.request.SignupRequest;
 import com.nadia.config.user.dto.request.UserRequest;
+import com.nadia.config.user.dto.response.*;
+import com.nadia.config.user.enums.UserStatusEnum;
 import com.nadia.config.user.exception.AccountException;
 import com.nadia.config.user.repo.LoginHistoriesRepo;
+import com.nadia.config.user.repo.UserRepo;
 import com.nadia.config.user.repo.UserRoleRepo;
+import com.nadia.config.user.service.RoleService;
+import com.nadia.config.user.service.UserService;
 import com.nadia.config.utils.RedisKeyUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     @Resource
-    private RedisService redisService;
+    private ConfigCenterRedisService configCenterRedisService;
     @Resource
     private UserRepo userRepo;
     @Resource
@@ -77,8 +77,8 @@ public class UserServiceImpl implements UserService {
     private int getLeftFailTimes(String name) {
         String key = name + "_login_failed";
 
-        if (redisService.exists(key)) {
-            int failTimes = Integer.parseInt(redisService.get(key));
+        if (configCenterRedisService.exists(key)) {
+            int failTimes = Integer.parseInt(configCenterRedisService.get(key));
             if (failTimes <= 5) {
                 return 5 - failTimes;
             }
@@ -97,14 +97,14 @@ public class UserServiceImpl implements UserService {
 
     private void processFailTimes(String name) {
         String key = name + "_login_failed";
-        if (redisService.exists(key)) {
-            redisService.incr(key);
-            int failTimes = Integer.parseInt(redisService.get(key));
+        if (configCenterRedisService.exists(key)) {
+            configCenterRedisService.incr(key);
+            int failTimes = Integer.parseInt(configCenterRedisService.get(key));
             if (failTimes >= 5) {
                 throw new AccountException(1005L);
             }
         } else {
-            redisService.set(key, "1", 3 * 60 * 60);
+            configCenterRedisService.set(key, "1", 3 * 60 * 60);
         }
     }
 
@@ -136,13 +136,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public void logout() {
         String token = UserContextHolder.getUserDetail().getToken();
-        redisService.del(token);
+        configCenterRedisService.del(token);
     }
 
     @Override
     public String afterLogin(long userId) {
         String token = createToken(userId);
-        String detail = redisService.get(RedisKeyUtil.getToken(token));
+        String detail = configCenterRedisService.get(RedisKeyUtil.getToken(token));
         UserDetail userDetail = JSONObject.parseObject(detail, UserDetail.class);
         UserContextHolder.setUserDetail(userDetail);
         return token;
@@ -150,7 +150,7 @@ public class UserServiceImpl implements UserService {
 
     public String createToken(long userId) {
         String token = UUID.randomUUID().toString();
-        redisService.delAll(RedisKeyUtil.getToken(token));
+        configCenterRedisService.delAll(RedisKeyUtil.getToken(token));
         List<UserRole> userRoles = userRoleRepo.selectByUserId(userId);
         List<Long> roleIds = userRoles.stream().map(userRole -> userRole.getRoleId()).collect(Collectors.toList());
         UserDetail userDetail = new UserDetail();
@@ -159,7 +159,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepo.selectByPrimaryKey(userId);
         userDetail.setName(user.getName());
         userDetail.setEmail(user.getEmail());
-        redisService.set(RedisKeyUtil.getToken(token), JSONObject.toJSONString(userDetail), timeOut);
+        configCenterRedisService.set(RedisKeyUtil.getToken(token), JSONObject.toJSONString(userDetail), timeOut);
         return token;
     }
 
@@ -167,8 +167,8 @@ public class UserServiceImpl implements UserService {
     public void refreshToken() {
         UserDetail userDetail = UserContextHolder.getUserDetail();
         String token = userDetail.getToken();
-        redisService.delAll(RedisKeyUtil.getToken(token));
-        redisService.set(RedisKeyUtil.getToken(token), JSONObject.toJSONString(userDetail), timeOut);
+        configCenterRedisService.delAll(RedisKeyUtil.getToken(token));
+        configCenterRedisService.set(RedisKeyUtil.getToken(token), JSONObject.toJSONString(userDetail), timeOut);
     }
 
     @Override

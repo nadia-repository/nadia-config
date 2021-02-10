@@ -1,8 +1,8 @@
 package com.nadia.config.listener.enumerate;
 
-import com.nadia.config.listener.messageBody.SwitchInstanceMessageBody;
 import com.nadia.config.listener.messageBody.ClientMessageBody;
 import com.nadia.config.listener.messageBody.HeartbeatMessageBody;
+import com.nadia.config.listener.messageBody.SwitchInstanceMessageBody;
 import com.nadia.config.listener.messageBody.UpdateValueMessageBody;
 import lombok.Getter;
 

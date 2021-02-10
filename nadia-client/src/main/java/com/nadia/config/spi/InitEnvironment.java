@@ -1,8 +1,9 @@
 package com.nadia.config.spi;
 
 import com.nadia.config.bean.ClientInfo;
+import org.springframework.context.EnvironmentAware;
 
-public interface InitEnvironment {
+public interface InitEnvironment extends EnvironmentAware {
 
     void init();
 
@@ -10,13 +11,17 @@ public interface InitEnvironment {
 
     ClientInfo getClientInfo();
 
-    void setGroup(String g);
-
-    void updateGroup(String newGroup);
+    void updateGroup(String application ,String newGroup);
 
     String getInstanceName();
 
     void setBasePackages(String[] basePackages);
 
     String[] getBasePackages();
+
+    String getDefaultApplication();
+
+    String getDefaultGroup();
+
+
 }

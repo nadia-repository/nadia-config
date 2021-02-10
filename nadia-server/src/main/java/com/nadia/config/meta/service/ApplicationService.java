@@ -1,6 +1,7 @@
 package com.nadia.config.meta.service;
 
 import com.nadia.config.meta.dto.response.ApplicationResponse;
+import com.nadia.config.meta.dto.response.GroupedApplicationResponse;
 
 import java.util.List;
 
@@ -12,5 +13,7 @@ import java.util.List;
 public interface ApplicationService {
 
 	List<ApplicationResponse> getApplications();
+
+	List<GroupedApplicationResponse> getGroupedApplications();
 
 }

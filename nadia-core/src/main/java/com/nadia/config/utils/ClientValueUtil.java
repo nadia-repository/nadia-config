@@ -8,6 +8,7 @@ import com.nadia.config.bean.ClientValueBody;
  * @date 2019-12-04 19:42
  */
 public class ClientValueUtil {
+    private final static String SLIPT = ":";
 
     public static ClientValueBody deserializer(String text){
         if(text == null){
@@ -31,5 +32,9 @@ public class ClientValueUtil {
     public static void main(String[] args) {
         String serializer = ClientValueUtil.serializer("12121", "333dffff");
         System.out.println(serializer);
+    }
+
+    public static String getApplicationGroup(String application,String group){
+        return application + SLIPT + group;
     }
 }

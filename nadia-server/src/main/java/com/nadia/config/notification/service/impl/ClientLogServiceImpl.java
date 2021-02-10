@@ -1,14 +1,16 @@
 package com.nadia.config.notification.service.impl;
 
-import com.nadia.config.notification.domain.ClientLog;
-import com.nadia.config.notification.dto.request.ClientLogRequest;
-import com.nadia.config.notification.repo.ClientLogRepo;
-import com.nadia.config.notification.service.ClientLogService;
+import com.alibaba.fastjson.JSONArray;
 import com.nadia.config.meta.domain.Application;
 import com.nadia.config.meta.domain.Group;
 import com.nadia.config.meta.dto.response.PageBean;
 import com.nadia.config.meta.repo.ApplicationRepo;
 import com.nadia.config.meta.repo.GroupRepo;
+import com.nadia.config.notification.domain.ClientLog;
+import com.nadia.config.notification.dto.request.ClientLogRequest;
+import com.nadia.config.notification.dto.response.ClientLogResponse;
+import com.nadia.config.notification.repo.ClientLogRepo;
+import com.nadia.config.notification.service.ClientLogService;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Service;
 
@@ -38,7 +40,9 @@ public class ClientLogServiceImpl implements ClientLogService {
                 clientLogRequest.getTraceId(),
                 clientLogRequest.getType(),
                 clientLogRequest.getLeve(),
-                clientLogRequest.getCreatedAt());
+                clientLogRequest.getCreatedAt(),
+                clientLogRequest.getPage(),
+                clientLogRequest.getLimit());
         return new PageBean<>(clientLogRequest, logs, CollectionUtils.isNotEmpty(logs) ? logs.size() : 0L);
     }
 }

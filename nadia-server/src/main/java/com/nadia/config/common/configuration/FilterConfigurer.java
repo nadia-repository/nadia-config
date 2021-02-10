@@ -19,7 +19,10 @@ public class FilterConfigurer {
         registration.setFilter(filter);
         registration.addUrlPatterns("/*");
         registration.setName("userDetail-filter");
+        // Separate some URIs with ,
+        registration.addInitParameter("excludedUri","/error/*,/user/login,/user/signup,/system/version");
         registration.setOrder(1);
         return registration;
     }
+
 }

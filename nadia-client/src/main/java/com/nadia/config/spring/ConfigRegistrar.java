@@ -1,5 +1,11 @@
 package com.nadia.config.spring;
 
+import com.nadia.config.annotation.EnableNadiaConfig;
+import com.nadia.config.callback.Listener;
+import com.nadia.config.constant.GroupConstant;
+import com.nadia.config.constant.PropertyConstant;
+import com.nadia.config.enums.LogLevelEnum;
+import com.nadia.config.listener.enumerate.EventType;
 import com.nadia.config.notifycenter.NotifyFactory;
 import com.nadia.config.spi.ConfigCenter;
 import com.nadia.config.spi.InitEnvironment;
@@ -7,22 +13,21 @@ import com.nadia.config.spi.LoadConfig;
 import com.nadia.config.utils.BeanRegistrationUtil;
 import com.nadia.config.utils.SpiServiceUtil;
 import com.nadia.config.utils.SpringUtils;
-import com.nadia.config.annotation.EnableNadiaConfig;
-import com.nadia.config.callback.Listener;
-import com.nadia.config.constant.PropertyConstant;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotationMetadata;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 
 public class ConfigRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware {
 
-    private Environment env;
+    private static Environment env;
 
     private static List<String> basePackages;
 
@@ -30,17 +35,13 @@ public class ConfigRegistrar implements ImportBeanDefinitionRegistrar, Environme
         return basePackages;
     }
 
-    public static void setBasePackages(AnnotationAttributes attributes){
-        String[] packages = attributes.getStringArray("basePackages");
-        if(CollectionUtils.isEmpty(ConfigRegistrar.basePackages)) {
-            ConfigRegistrar.basePackages = new ArrayList<>();
-        }
-        ConfigRegistrar.basePackages.addAll(Arrays.asList(packages));
-    }
+    private static String defaultApplication;
+
+    private static String defaultGroup;
 
     @Override
     public void setEnvironment(Environment environment) {
-        this.env = environment;
+        env = environment;
     }
 
     @Override
@@ -56,6 +57,10 @@ public class ConfigRegistrar implements ImportBeanDefinitionRegistrar, Environme
         //初始化需要扫描的包
         ConfigRegistrar.setBasePackages(attributes);
 
+        //初始化DefalutApplication & DefalutGroup
+        ConfigRegistrar.setDefaultApplication(attributes);
+        ConfigRegistrar.setDefaultGroup(attributes);
+
         //工具
         BeanRegistrationUtil.registerBeanDefinitionIfNotExists(registry, SpringUtils.class.getName(), SpringUtils.class);
 
@@ -63,13 +68,20 @@ public class ConfigRegistrar implements ImportBeanDefinitionRegistrar, Environme
         //----->SPI实现，本地变量的手机和Service端显示的服务信息可自定义实现
         Map<String, Object> envPropertyValues = new HashMap<>();
         envPropertyValues.put("importingClassMetadata", importingClassMetadata);
+        envPropertyValues.put("defaultApplication", defaultApplication);
+        envPropertyValues.put("defaultGroup", defaultGroup);
         InitEnvironment env = SpiServiceUtil.loadFirst(InitEnvironment.class);
         BeanRegistrationUtil.registerBeanDefinitionIfNotExists(registry, InitEnvironment.class.getName(), env.getClass(), envPropertyValues);
 
         //收集本地配置&回调方法
         Map<String, Object> processorPropertyValues = new HashMap<>();
         processorPropertyValues.put("importingClassMetadata", importingClassMetadata);
+        processorPropertyValues.put("defaultApplication", defaultApplication);
+        processorPropertyValues.put("defaultGroup", defaultGroup);
         BeanRegistrationUtil.registerBeanDefinitionIfNotExists(registry, SpringValueProcessor.class.getName(), SpringValueProcessor.class, processorPropertyValues);
+
+        //启动器注册
+        BeanRegistrationUtil.registerBeanDefinitionIfNotExists(registry, ConfigPostConstructProcessor.class.getName(), ConfigPostConstructProcessor.class);
 
         //redis装载
         ConfigCenter configCenter = SpiServiceUtil.loadFirst(ConfigCenter.class);
@@ -93,7 +105,7 @@ public class ConfigRegistrar implements ImportBeanDefinitionRegistrar, Environme
         BeanRegistrationUtil.registerBeanDefinitionIfNotExists(registry, NotifyFactory.class.getName(), notifyFactory.getClass());
 
         //配置变更启动类
-        BeanRegistrationUtil.registerBeanDefinitionIfNotExists(registry, ConfigBootstart.class.getName(), ConfigBootstart.class);
+        BeanRegistrationUtil.registerBeanDefinitionIfNotExists(registry, ConfigPostConstructProcessor.class.getName(), ConfigPostConstructProcessor.class);
 
         //spring容器关闭时，销毁当前实例信息
         BeanRegistrationUtil.registerBeanDefinitionIfNotExists(registry, ApplicationEventListener.class.getName(), ApplicationEventListener.class);
@@ -112,5 +124,37 @@ public class ConfigRegistrar implements ImportBeanDefinitionRegistrar, Environme
             }
         }
         return false;
+    }
+
+    public static void setBasePackages(AnnotationAttributes attributes){
+        String[] packages = attributes.getStringArray("basePackages");
+        if(CollectionUtils.isEmpty(ConfigRegistrar.basePackages)) {
+            ConfigRegistrar.basePackages = new ArrayList<>();
+        }
+        ConfigRegistrar.basePackages.addAll(Arrays.asList(packages));
+    }
+
+    public static void setDefaultApplication(AnnotationAttributes attributes) {
+        String application = attributes.getString("application");
+        String propertyApplication = env.getProperty(PropertyConstant.PROPERTRY_APPLICATION);
+        if (StringUtils.isEmpty(application) && StringUtils.isEmpty(propertyApplication)) {
+            defaultApplication = env.getProperty(PropertyConstant.PROPERTRY_APPLICATION_NAME);
+        } else if (!StringUtils.isEmpty(propertyApplication)) {
+            defaultApplication = propertyApplication;
+        } else if (!StringUtils.isEmpty(application)) {
+            defaultApplication = application;
+        }
+    }
+
+    private static void setDefaultGroup(AnnotationAttributes attributes) {
+        String group = attributes.getString("group");
+        String propertyGroup = env.getProperty(PropertyConstant.PROPERTRY_GROUP);
+        if (StringUtils.isEmpty(group) && StringUtils.isEmpty(propertyGroup)) {
+            defaultGroup = GroupConstant.DEFAULT;
+        } else if (!StringUtils.isEmpty(propertyGroup)) {
+            defaultGroup = propertyGroup;
+        } else if (!StringUtils.isEmpty(group)) {
+            defaultGroup = group;
+        }
     }
 }

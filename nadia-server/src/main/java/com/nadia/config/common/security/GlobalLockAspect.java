@@ -2,7 +2,7 @@ package com.nadia.config.common.security;
 
 import com.alibaba.fastjson.JSONObject;
 import com.nadia.config.common.exception.BusinessException;
-import com.nadia.config.redis.RedisService;
+import com.nadia.config.redis.ConfigCenterRedisService;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -25,7 +25,7 @@ public class GlobalLockAspect {
     private final static int TIME_OUT = 3;
 
     @Resource
-    private RedisService redisService;
+    private ConfigCenterRedisService configCenterRedisService;
 
     @Around(value = "@within(lock)")
     public Object logAround4Class(ProceedingJoinPoint point, GlobalLock lock) throws Throwable {
@@ -47,7 +47,7 @@ public class GlobalLockAspect {
         boolean locked = false;
 
         try {
-            locked = redisService.lock(key, key, TIME_OUT);
+            locked = configCenterRedisService.lock(key, key, TIME_OUT);
             log.info("Locking distributed lock, lock key: {}, lock result: {}, thread ID: {}",
                 key, locked, Thread.currentThread().getId());
 
@@ -64,7 +64,7 @@ public class GlobalLockAspect {
         } catch (Throwable t) {
             throw t;
         } finally {
-            redisService.unlock(locked, key);
+            configCenterRedisService.unlock(locked, key);
             LockContext.clean();
         }
 

@@ -1,9 +1,9 @@
 package com.nadia.config.listener;
 
 import com.alibaba.fastjson.JSONObject;
+import com.nadia.config.listener.enumerate.EventType;
 import com.nadia.config.listener.messageBody.MessageBody;
 import com.nadia.config.listener.messageBody.SwitchInstanceMessageBody;
-import com.nadia.config.listener.enumerate.EventType;
 
 /**
  * @author xiang.shi

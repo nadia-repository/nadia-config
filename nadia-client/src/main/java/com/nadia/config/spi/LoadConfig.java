@@ -15,14 +15,21 @@ public interface LoadConfig {
     /**
      * 当前Client信息从redis中的Group中剔除
      */
-    void offlineClientInGroup();
+    void offlineClientInGroup(String application,String oldGroup);
 
     /**
      * 当前Client配置从redis中的Group中提出
      */
-    void offlineClientConfigs();
+    void offlineClientConfigs(String application,String oldGroup);
 
     /**
+     * 服务端动态修改Group时使用
+     * 将当前Client信息添加至redis中的Group中
+     */
+    void onlineClientInGroup(String application,String newGroup);
+
+    /**
+     * 客户端初始化时使用
      * 将当前Client信息添加至redis中的Group中
      */
     void onlineClientInGroup();
@@ -38,16 +45,23 @@ public interface LoadConfig {
     void pushClinetInfo();
 
     /**
+     * 客户端初始化时使用
      * 将当前Client的所有配置信息更新至redis中
      */
     void pushClientConfigs();
+
+    /**
+     * 服务端动态修改Group时使用
+     * 将当前Client的所有配置信息更新至redis中
+     */
+    void pushClientConfigs(String application,String oldGroup,String newGroup);
 
     /**
      * 将当前Client的某以配置信息更新至redis中
      * @param key
      * @param value
      */
-    void pushClientConfig(String key, String value);
+    void pushClientConfig(String key, String value,String application,String group);
 
     /**
      * 更新Client某一配置，并回调方法
@@ -55,7 +69,7 @@ public interface LoadConfig {
      * @param newValue
      * @param callbackScenes
      */
-    boolean updateClientValue(String key, Object newValue, NadiaConfig.CallbackScenes callbackScenes);
+    boolean updateClientValue(String application,String group,String key, Object newValue, NadiaConfig.CallbackScenes callbackScenes);
 
     /**
      * 根据redis中的配置，更新Client的所有配置信息

@@ -2,6 +2,7 @@ package com.nadia.config.meta.controller;
 
 import com.nadia.config.common.rest.RestBody;
 import com.nadia.config.meta.dto.response.ApplicationResponse;
+import com.nadia.config.meta.dto.response.GroupedApplicationResponse;
 import com.nadia.config.meta.service.ApplicationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,11 @@ public class ApplicationController {
 	@RequestMapping(value = "/applications", method = RequestMethod.GET)
 	public RestBody<List<ApplicationResponse>> getApplications() {
 		return RestBody.succeed(applicationService.getApplications());
+	}
+
+	@RequestMapping(value = "/applications/grouped", method = RequestMethod.GET)
+	public RestBody<List<GroupedApplicationResponse>> getGroupedApplications() {
+		return RestBody.succeed(applicationService.getGroupedApplications());
 	}
 
 }

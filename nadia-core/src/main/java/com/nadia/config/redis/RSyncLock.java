@@ -13,7 +13,7 @@ public class RSyncLock implements RLock {
 	private static final int DEFAULT_EXPIRE_TIME = 20;// 默认超时时间,秒
 	private static final int DEFAULT_MAX_WAIT_TIME = 30;// 默认最大超时时间,秒(防止程序过多浪费性能)
 	private static final TimeUnit UNIT = TimeUnit.SECONDS;
-	private final RedisService redis;
+	private final ConfigCenterRedisService redis;
 	private final String lockKey;
 	private final String lockValue = getRandomUID();
 
@@ -21,7 +21,7 @@ public class RSyncLock implements RLock {
 	private final int expireTime;
 	private final int waitTime;
 
-	public RSyncLock(String lockKey, RedisService redis) {
+	public RSyncLock(String lockKey, ConfigCenterRedisService redis) {
 		this.lockKey = lockKey;
 		this.expireTime = DEFAULT_EXPIRE_TIME;
 		this.waitTime = DEFAULT_EXPIRE_TIME + 5;
@@ -38,7 +38,7 @@ public class RSyncLock implements RLock {
 		return UUID.randomUUID().toString().replace("-", "").toLowerCase();
 	}
 
-	public RSyncLock(String lockKey, int expireTime, RedisService redis) {
+	public RSyncLock(String lockKey, int expireTime, ConfigCenterRedisService redis) {
 		this.lockKey = lockKey;
 		if (expireTime <= 0) {
 			this.expireTime = DEFAULT_EXPIRE_TIME;

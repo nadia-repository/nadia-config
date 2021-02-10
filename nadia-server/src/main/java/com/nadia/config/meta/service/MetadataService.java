@@ -26,7 +26,7 @@ public interface MetadataService {
 
     List<InstanceResponse> getInstances(String application, String group);
 
-    List<InstanceConfigsResponse> getInstanceConfig(String application, String group , String instance);
+    List<InstanceConfigsResponse> getInstanceConfig(String application, String group ,String instance);
 
     CompareResponse compareGroupConfigs(CompareRequest compareRequest);
 

@@ -3,8 +3,8 @@ package com.nadia.config.system.service.impl;
 import com.nadia.config.system.dto.response.MenuResponse;
 import com.nadia.config.system.repo.MenuRepo;
 import com.nadia.config.system.service.MenuService;
-import com.nadia.config.user.service.RoleService;
 import com.nadia.config.user.repo.RoleMenuRepo;
+import com.nadia.config.user.service.RoleService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;

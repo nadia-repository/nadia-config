@@ -4,7 +4,9 @@ public enum TaskStatus {
     PENDING("pending"),
     APPROVE("approve"),
     REJECT("reject"),
-    COMPLETED("completed");
+    COMPLETED("completed"),
+    INVALID("invalid"),
+    ;
 
     private String status;
 

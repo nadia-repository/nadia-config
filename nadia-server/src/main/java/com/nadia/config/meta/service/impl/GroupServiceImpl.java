@@ -2,11 +2,13 @@ package com.nadia.config.meta.service.impl;
 
 import com.google.common.collect.Lists;
 import com.nadia.config.meta.domain.Group;
+import com.nadia.config.meta.domain.GroupCriteria;
 import com.nadia.config.meta.dto.request.GroupRequest;
 import com.nadia.config.meta.dto.response.GroupResponse;
 import com.nadia.config.meta.repo.GroupRepo;
 import com.nadia.config.meta.service.GroupService;
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;

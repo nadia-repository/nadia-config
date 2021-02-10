@@ -1,6 +1,7 @@
 package com.nadia.config.user.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.nadia.config.user.enums.UserStatusEnum;
 import lombok.Data;
 
 import java.util.Date;
